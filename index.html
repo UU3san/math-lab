@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数学ラボ</title>
-<meta name="description" content="さわって、動かして、数学がわかる。ブラウザだけで使える算数・数学の学習アプリを集めたサイトです。">
+<meta name="description" content="さわって、動かして、数学がわかる。株式会社日本総合教育舎がつくる、ブラウザだけで使える算数・数学の学習アプリを集めたサイトです。">
+<meta name="author" content="株式会社日本総合教育舎">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 <style>
@@ -22,6 +23,15 @@
   .hero h1 em{font-style:normal;color:var(--accent);}
   .hero p{margin-top:14px;color:var(--muted);font-size:.96rem;max-width:46ch}
   .hero figure{color:var(--accent);opacity:.5}
+  .hero .by{
+    margin-top:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding-top:16px;border-top:1px solid var(--line);max-width:46ch;
+  }
+  .hero .by a{
+    font-size:.92rem;font-weight:700;color:var(--ink);text-decoration:none;
+    border-bottom:1px solid var(--line);padding-bottom:1px;
+  }
+  .hero .by a:hover{color:var(--accent-dark);border-color:var(--accent)}
 
   /* ---------- 教材カード ---------- */
   .cards{
@@ -88,6 +98,10 @@
       <p class="eyebrow">Math Lab</p>
       <h1>さわって、動かして、<br><em>数学がわかる。</em></h1>
       <p>教科書の図は動きません。ここに置いてあるのは、自分の手で回したり、ひらいたり、かぞえたりできる教材です。インストールは不要で、パソコンでもスマホでもそのまま使えます。</p>
+      <p class="by">
+        <span class="eyebrow">Produced by</span>
+        <a href="https://uu3san.github.io/jr-web/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
+      </p>
     </div>
     <figure>
       <!-- 正五角形と対角線（黄金比があらわれる図） -->
@@ -129,10 +143,16 @@
 
 <footer class="site-footer">
   <div class="footer-inner">
-    <a href="index.html">ホーム</a>
-    <a href="index.html#materials">教材</a>
-    <small>&copy; 2026 数学ラボ</small>
+    <nav class="footer-links">
+      <a href="index.html">ホーム</a>
+      <a href="index.html#materials">教材</a>
+    </nav>
+    <p class="credit">
+      <span>Produced by</span>
+      <a href="https://uu3san.github.io/jr-web/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
+    </p>
   </div>
+  <div class="footer-bottom">&copy; 2026 株式会社日本総合教育舎</div>
 </footer>
 
 </body>

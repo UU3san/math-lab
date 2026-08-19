@@ -25,6 +25,10 @@
   }
   #app aside{display:flex;flex-direction:column;gap:16px;min-width:0}
   #app main{display:flex;flex-direction:column;gap:12px;min-width:0}
+  /* 読みものは本体の下に全幅2段組で置く（細い柱で長文を読ませない） */
+  #app .reading{
+    grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;
+  }
   #app h2{
     font-family:'IBM Plex Mono',monospace;
     font-size:.68rem;letter-spacing:.16em;color:var(--accent);margin:0 0 11px;font-weight:500;
@@ -110,13 +114,48 @@
     font-family:'IBM Plex Mono',monospace;
   }
   #app .desc{font-size:.79rem;line-height:1.95;color:#3d4c46}
+
+  /* オイラーの多面体定理：辺を2種類に分けて数える */
+  #app .eu-steps{list-style:none;display:flex;flex-direction:column;gap:8px;margin:11px 0}
+  #app .eu-steps li{
+    background:var(--panel2);border-radius:9px;padding:9px 11px;
+    display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline;
+  }
+  #app .eu-steps .t{font-size:.78rem;line-height:1.85;color:#3d4c46}
+  #app .eu-steps .n{
+    font-size:.98rem;font-weight:700;color:var(--accent-dark);white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+  }
+  #app .eu-steps .f{
+    grid-column:1/-1;font-size:.68rem;color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  #app .eu-concl{
+    background:var(--accent-soft);border-radius:9px;padding:10px 11px;text-align:center;
+    font-size:.76rem;color:var(--muted);
+  }
+  #app .eu-concl b{
+    display:block;margin-top:3px;font-size:.98rem;color:var(--accent-dark);
+    font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+  }
+
+  /* 展開図をかくコツ */
+  #app dl.tips{margin:0 0 11px}
+  #app dl.tips dt{
+    font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;
+    color:var(--accent);font-weight:500;margin-top:11px;
+  }
+  #app dl.tips dt:first-child{margin-top:0}
+  #app dl.tips dd{font-size:.78rem;line-height:1.9;color:#3d4c46;margin:2px 0 0}
+  #app dl.tips b{color:var(--accent-dark);font-variant-numeric:tabular-nums}
   #app :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 
   @media(max-width:980px){
     #app{grid-template-columns:1fr;padding:0 14px 8px;gap:14px}
-    #app aside{display:contents}
+    #app aside,#app .reading{display:contents}
     #app .p1{order:1} #app main{order:2} #app .p3{order:3} #app .p4{order:4}
     #app .p5{order:5} #app .p6{order:6} #app .p7{order:7}
+    #app .p8{order:8} #app .p9{order:9}
     #app .solids{flex-direction:row;flex-wrap:wrap}
     #app .solid-btn{flex:1 1 145px}
     #app .stage{height:58vh;min-height:380px}
@@ -223,6 +262,45 @@
   </div>
 </aside>
 
+<section class="reading">
+  <div class="panel p8">
+    <h2>オイラーの多面体定理</h2>
+    <p class="desc">どんな多面体でも <b>頂点の数 − 辺の数 + 面の数 = 2</b> になります。正多面体だけの性質ではなく、へこみのない立体ならサッカーボールでも成り立ちます。</p>
+    <p class="desc" style="margin-top:9px">なぜ2になるのか、展開図で確かめられます。辺は2種類しかありません。</p>
+    <ol class="eu-steps">
+      <li>
+        <span class="t">面と面をつなぐ<b>折り目</b>。1枚めの面から順につないでいくので、面の数より1つ少ない。</span>
+        <span class="n" id="euFold">-</span>
+        <span class="f">面の数 − 1</span>
+      </li>
+      <li>
+        <span class="t">展開図のふちになる<b>切りはなした辺</b>。すべての頂点が輪にならずにつながるので、頂点の数より1つ少ない。</span>
+        <span class="n" id="euCut">-</span>
+        <span class="f">頂点の数 − 1</span>
+      </li>
+    </ol>
+    <div class="eu-concl">辺の数はこの2つの合計
+      <b id="euSum">-</b></div>
+    <p class="desc" style="margin-top:9px">つまり <b>E =（F − 1）+（V − 1）</b>。これを整理すると <b>V − E + F = 2</b> です。「展開図にひらく」を押して、折り目の数を数えてみてください。</p>
+  </div>
+  <div class="panel p9">
+    <h2>展開図をかくコツ</h2>
+    <dl class="tips">
+      <dt>大きさ</dt>
+      <dd>1辺を4〜5cmにすると、切るのも折るのも組み立てるのもちょうどよい大きさになります。小さすぎると、のりしろが指に負けます。</dd>
+      <dt>正確にかく</dt>
+      <dd id="tipDraw">-</dd>
+      <dt>のりしろ</dt>
+      <dd>切りはなした辺は <b id="tipCut">-</b>。のりしろは、向かいあう2辺のうち<b>片方だけ</b>に付けます（<b id="tipTab">-</b>）。幅は5〜7mm、両はしを少し斜めに切ると、組むときに重なりません。</dd>
+      <dt>折り目</dt>
+      <dd>インクの出なくなったボールペンや定規の角で、折る線に軽く筋をつけてから折ると、角がきれいに立ちます。山折りは全部同じ向きです。</dd>
+      <dt>形はひと通りではない</dt>
+      <dd>この立体の展開図は <b id="tipNets">-</b> あります。「別の展開図」ボタンを押すと、つながり方の違う展開図が出てきます。</dd>
+    </dl>
+    <p class="desc">かく順番は、まん中に置く面を1枚決めて、そこから となりの面を1枚ずつ足していくとうまくいきます。面が重なりそうになったら、足す向きを変えてください。</p>
+  </div>
+</section>
+
 </div>
 
 <footer class="site-footer">
@@ -233,7 +311,7 @@
     </nav>
     <p class="credit">
       <span>Produced by</span>
-      <a href="https://uu3san.github.io/jr-web/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
+      <a href="https://nasa.co.jp/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
     </p>
   </div>
   <div class="footer-bottom">&copy; 2026 株式会社日本総合教育舎</div>
@@ -295,15 +373,15 @@ const DODE_N=CUBE_V.slice();for(const s of[1,-1])for(const u of[1,-1]){
   DODE_N.push([0,s*PHI,u/PHI],[s*PHI,u/PHI,0],[u/PHI,0,s*PHI]);}
 
 const DEFS={
-  tetra :{jp:'正四面体', en:'Tetrahedron', v:TETRA_V, n:TETRA_V.map(v=>mul(v,-1)), dual:'正四面体',
+  tetra :{jp:'正四面体', en:'Tetrahedron', nets:2, v:TETRA_V, n:TETRA_V.map(v=>mul(v,-1)), dual:'正四面体',
     desc:'いちばん小さな正多面体。三角すいの形で、どの面から見ても同じに見えます。自分自身が双対という珍しい立体です。'},
-  cube  :{jp:'正六面体（立方体）', en:'Cube', v:CUBE_V, n:OCTA_V, dual:'正八面体',
+  cube  :{jp:'正六面体（立方体）', en:'Cube', nets:11, v:CUBE_V, n:OCTA_V, dual:'正八面体',
     desc:'いちばん身近な正多面体。サイコロや箱の形です。展開図は全部で11種類あり、「別の展開図」ボタンでいろいろな形を試せます。'},
-  octa  :{jp:'正八面体', en:'Octahedron', v:OCTA_V, n:CUBE_V, dual:'正六面体（立方体）',
+  octa  :{jp:'正八面体', en:'Octahedron', nets:11, v:OCTA_V, n:CUBE_V, dual:'正六面体（立方体）',
     desc:'四角すいを2つ、そこ同士でくっつけた形。立方体の各面の真ん中を結ぶと、この立体があらわれます。'},
-  dodeca:{jp:'正十二面体', en:'Dodecahedron', v:DODE_V, n:ICO_N, dual:'正二十面体',
+  dodeca:{jp:'正十二面体', en:'Dodecahedron', nets:43380, v:DODE_V, n:ICO_N, dual:'正二十面体',
     desc:'正五角形が12枚。となりあう面のなす角が大きく、いちばん球に近づいていく仲間です。サッカーボールのもとになる形でもあります。'},
-  icosa :{jp:'正二十面体', en:'Icosahedron', v:ICO_V, n:DODE_N, dual:'正十二面体',
+  icosa :{jp:'正二十面体', en:'Icosahedron', nets:43380, v:ICO_V, n:DODE_N, dual:'正十二面体',
     desc:'正三角形が20枚。1つの頂点に5枚も集まります。5種類の中でいちばん面が多く、いちばん球に近い立体です。'}
 };
 const SHAPE={3:'正三角形',4:'正方形',5:'正五角形'};
@@ -418,6 +496,14 @@ function updateFacts(){
   set('fDeg',deg+'枚'); set('fAng',inner.toFixed(inner%1?1:0)+'°');
   set('fDih',dih.toFixed(1)+'°'); set('fDual',d.dual);
   set('eu',`${V} − ${E} + ${F} = ${V-E+F}`);
+  set('euFold',(F-1)+'本'); set('euCut',(V-1)+'本');
+  set('euSum',`${F-1} + ${V-1} = ${E}本`);
+  const DRAW={3:'正三角形はコンパスで。辺の長さを半径にした円を、辺の両はしからそれぞれかき、その交点を結べば正確な正三角形になります。',
+              4:'正方形は三角定規の直角を使って。となりの辺と90°、長さは全部同じにそろえます。',
+              5:'正五角形は円をかいてから。中心のまわりを分度器で72°ずつ5つに分け、円周上の点を結びます。'};
+  set('tipDraw',DRAW[m]);
+  set('tipCut',(V-1)+'本'); set('tipTab',(V-1)+'枚');
+  set('tipNets',d.nets.toLocaleString('ja-JP')+'通り');
   document.getElementById('desc').textContent=d.desc;
   document.querySelectorAll('.solid-btn').forEach(b=>b.classList.toggle('on',b.dataset.k===st.key));
 }

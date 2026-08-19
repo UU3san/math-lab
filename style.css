@@ -90,6 +90,23 @@ a{color:var(--accent-dark)}
 }
 .page-head p{color:var(--muted);font-size:.92rem;margin-top:8px;max-width:62ch}
 
+/* ---------- ページの中の区切り ---------- */
+.section{padding:8px 0 0}
+.section-head{
+  display:flex;align-items:baseline;gap:14px;margin-bottom:16px;
+  border-top:2px solid var(--ink);padding-top:12px;
+}
+.section-head h2{
+  font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:1.12rem;
+}
+.section-head .count{
+  margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+}
+.note{
+  margin-top:22px;font-size:.82rem;color:var(--muted);
+  border-left:3px solid var(--line);padding-left:14px;
+}
+
 /* ---------- フッター ---------- */
 .site-footer{
   margin-top:56px;border-top:1px solid var(--line);

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ▼ここを書きかえる（タイトルは「教材名｜数学ラボ」の形） -->
+<title>教材名｜数学ラボ</title>
+<meta name="description" content="この教材で何ができるかを1〜2文で。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* このページだけのスタイル。色は style.css の変数を使う。
+     --accent / --accent-dark / --accent-soft / --ink / --muted / --line
+     --paper / --card / --radius / --shadow / --wrap
+     新しい色をここで作るときは #app の中だけで定義し、上の変数は上書きしない。 */
+  #app{
+    max-width:var(--wrap);margin:0 auto;padding:4px 20px 8px;
+    display:flex;flex-direction:column;gap:16px;
+  }
+  #app .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);
+  }
+  @media(max-width:980px){
+    #app{padding:0 14px 8px}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <circle cx="16" cy="16" r="13"/>
+        <polygon points="16,4 27,12 23,25 9,25 5,12"/>
+      </svg>
+      <b>数学ラボ<span>MATH LAB</span></b>
+    </a>
+    <nav class="header-nav">
+      <a href="index.html">ホーム</a>
+      <a href="index.html#materials">教材</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ▼ページ上部の帯。eyebrow は英語の短いラベル -->
+<div class="wrap page-head">
+  <p class="eyebrow">Subject</p>
+  <h1>教材名</h1>
+  <p>この教材で何ができるかを1行で。</p>
+</div>
+
+<!-- ▼ここから中身 -->
+<div id="app">
+  <div class="panel">
+    <p>ここに教材を書く。</p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html">ホーム</a>
+    <a href="index.html#materials">教材</a>
+    <small>&copy; 2026 数学ラボ</small>
+  </div>
+</footer>
+
+<script>
+// ここに教材の JavaScript を書く
+</script>
+
+</body>
+</html>

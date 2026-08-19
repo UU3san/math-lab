@@ -24,17 +24,6 @@
   .hero figure{color:var(--accent);opacity:.5}
 
   /* ---------- 教材カード ---------- */
-  .section{padding:8px 0 0}
-  .section-head{
-    display:flex;align-items:baseline;gap:14px;margin-bottom:16px;
-    border-top:2px solid var(--ink);padding-top:12px;
-  }
-  .section-head h2{
-    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:1.12rem;
-  }
-  .section-head .count{
-    margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
-  }
   .cards{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:18px;
   }
@@ -65,10 +54,6 @@
   .card.feature .body{display:flex;flex-direction:column;gap:10px;min-width:0}
   .card.feature h3{font-size:1.18rem}
 
-  .note{
-    margin-top:22px;font-size:.82rem;color:var(--muted);
-    border-left:3px solid var(--line);padding-left:14px;
-  }
 
   @media(max-width:760px){
     .hero{padding:34px 0 26px}
@@ -92,7 +77,7 @@
     </a>
     <nav class="header-nav">
       <a href="index.html" class="active">ホーム</a>
-      <a href="polyhedron.html">正多面体ラボ</a>
+      <a href="index.html#materials">教材</a>
     </nav>
   </div>
 </header>
@@ -118,7 +103,7 @@
 </section>
 
 <main class="wrap">
-  <section class="section">
+  <section class="section" id="materials">
     <div class="section-head">
       <h2>教材</h2>
       <p class="count">01</p>
@@ -145,7 +130,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <a href="index.html">ホーム</a>
-    <a href="polyhedron.html">正多面体ラボ</a>
+    <a href="index.html#materials">教材</a>
     <small>&copy; 2026 数学ラボ</small>
   </div>
 </footer>

@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap');
+
+/* ==========================================================
+   数学ラボ 共通スタイル
+   方眼ノートを下敷きにした配色。緑インクをアクセントにする。
+   ========================================================== */
+
+:root{
+  --paper:#faf9f5;
+  --card:#ffffff;
+  --grid:#e6eae2;
+  --grid-bold:#d6dcd2;
+  --ink:#1e2a26;
+  --muted:#68786f;
+  --line:#e0e5dd;
+  --accent:#0f7a5a;
+  --accent-dark:#0a5b43;
+  --accent-soft:#e7f2ed;
+  --mark:#c2542e;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(30,42,38,.05), 0 8px 24px rgba(30,42,38,.07);
+  --wrap:1120px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+
+body{
+  font-family:'Noto Sans JP','Meiryo',sans-serif;
+  color:var(--ink);
+  line-height:1.85;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid-bold) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-bold) 1px,transparent 1px),
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  background-position:-1px -1px;
+}
+
+img,svg{display:block;max-width:100%}
+a{color:var(--accent-dark)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
+
+/* 見出しに使う等幅の小さなラベル（式や記号と相性がよい） */
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--accent);font-weight:500;
+}
+
+/* ---------- ヘッダー ---------- */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(250,249,245,.88);
+  backdrop-filter:saturate(1.4) blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.header-inner{
+  max-width:var(--wrap);margin:0 auto;padding:12px 20px;
+  display:flex;align-items:center;gap:14px;
+}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand svg{width:30px;height:30px;color:var(--accent);flex:0 0 30px}
+.brand b{
+  font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;
+  font-size:1.08rem;letter-spacing:.02em;line-height:1.2;
+}
+.brand span{
+  display:block;font-family:'IBM Plex Mono',monospace;
+  font-size:.6rem;letter-spacing:.2em;color:var(--muted);font-weight:400;
+}
+.header-nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.header-nav a{
+  font-size:.82rem;text-decoration:none;color:var(--muted);
+  padding:6px 12px;border-radius:999px;transition:.15s;
+}
+.header-nav a:hover{background:var(--accent-soft);color:var(--accent-dark)}
+.header-nav a.active{background:var(--accent);color:#fff;font-weight:700}
+
+/* ---------- ページの上の帯 ---------- */
+.page-head{padding:34px 0 26px}
+.page-head h1{
+  font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;
+  font-size:clamp(1.5rem,4.2vw,2rem);line-height:1.35;margin-top:6px;
+  text-wrap:balance;
+}
+.page-head p{color:var(--muted);font-size:.92rem;margin-top:8px;max-width:62ch}
+
+/* ---------- フッター ---------- */
+.site-footer{
+  margin-top:56px;border-top:1px solid var(--line);
+  background:rgba(255,255,255,.72);
+}
+.footer-inner{
+  max-width:var(--wrap);margin:0 auto;padding:26px 20px;
+  display:flex;flex-wrap:wrap;gap:14px 28px;align-items:baseline;
+}
+.site-footer a{color:var(--muted);text-decoration:none;font-size:.82rem}
+.site-footer a:hover{color:var(--accent-dark)}
+.site-footer small{
+  margin-left:auto;color:var(--muted);font-size:.74rem;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+@media(max-width:640px){
+  .brand span{display:none}
+  .header-nav a{padding:6px 10px;font-size:.78rem}
+  .site-footer small{margin-left:0;width:100%}
+}

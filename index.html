@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学ラボ</title>
+<meta name="description" content="さわって、動かして、数学がわかる。ブラウザだけで使える算数・数学の学習アプリを集めたサイトです。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---------- トップのつかみ ---------- */
+  .hero{padding:52px 0 40px}
+  .hero-inner{
+    max-width:var(--wrap);margin:0 auto;padding:0 20px;
+    display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:32px;align-items:center;
+  }
+  .hero h1{
+    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;
+    font-size:clamp(1.9rem,5.4vw,2.9rem);line-height:1.3;margin-top:8px;
+    letter-spacing:.01em;text-wrap:balance;
+  }
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero p{margin-top:14px;color:var(--muted);font-size:.96rem;max-width:46ch}
+  .hero figure{color:var(--accent);opacity:.5}
+
+  /* ---------- 教材カード ---------- */
+  .section{padding:8px 0 0}
+  .section-head{
+    display:flex;align-items:baseline;gap:14px;margin-bottom:16px;
+    border-top:2px solid var(--ink);padding-top:12px;
+  }
+  .section-head h2{
+    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:1.12rem;
+  }
+  .section-head .count{
+    margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--muted);
+  }
+  .cards{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:18px;
+  }
+  .card{
+    display:flex;flex-direction:column;gap:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px;text-decoration:none;color:inherit;
+    box-shadow:var(--shadow);transition:transform .16s, box-shadow .16s, border-color .16s;
+  }
+  .card:hover{
+    transform:translateY(-3px);border-color:var(--accent);
+    box-shadow:0 2px 4px rgba(30,42,38,.06), 0 14px 32px rgba(15,122,90,.14);
+  }
+  .card .mark{
+    width:62px;height:62px;color:var(--accent);
+    background:var(--accent-soft);border-radius:10px;padding:9px;
+  }
+  .card h3{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:1.06rem}
+  .card p{font-size:.84rem;color:var(--muted);line-height:1.8}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px}
+  .tags span{
+    font-size:.68rem;letter-spacing:.04em;color:var(--accent-dark);
+    background:var(--accent-soft);border-radius:999px;padding:3px 10px;
+  }
+  /* 最初の1つは大きく見せる（教材が増えたら feature を外す） */
+  .card.feature{grid-column:span 2;flex-direction:row;align-items:flex-start;gap:20px}
+  .card.feature .mark{width:84px;height:84px;flex:0 0 84px;padding:12px}
+  .card.feature .body{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .card.feature h3{font-size:1.18rem}
+
+  .note{
+    margin-top:22px;font-size:.82rem;color:var(--muted);
+    border-left:3px solid var(--line);padding-left:14px;
+  }
+
+  @media(max-width:760px){
+    .hero{padding:34px 0 26px}
+    .hero-inner{grid-template-columns:1fr;gap:22px}
+    .hero figure{max-width:170px}
+    .card.feature{grid-column:auto;flex-direction:column;gap:12px}
+    .card.feature .mark{width:62px;height:62px;flex:0 0 62px;padding:9px}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <circle cx="16" cy="16" r="13"/>
+        <polygon points="16,4 27,12 23,25 9,25 5,12"/>
+      </svg>
+      <b>数学ラボ<span>MATH LAB</span></b>
+    </a>
+    <nav class="header-nav">
+      <a href="index.html" class="active">ホーム</a>
+      <a href="polyhedron.html">正多面体ラボ</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <p class="eyebrow">Math Lab</p>
+      <h1>さわって、動かして、<br><em>数学がわかる。</em></h1>
+      <p>教科書の図は動きません。ここに置いてあるのは、自分の手で回したり、ひらいたり、かぞえたりできる教材です。インストールは不要で、パソコンでもスマホでもそのまま使えます。</p>
+    </div>
+    <figure>
+      <!-- 正五角形と対角線（黄金比があらわれる図） -->
+      <svg viewBox="0 0 220 220" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+        <circle cx="110" cy="110" r="88"/>
+        <circle cx="110" cy="110" r="44" stroke-dasharray="3 5"/>
+        <polygon points="110,22 193.7,82.8 161.7,181.2 58.3,181.2 26.3,82.8" stroke-width="1.8"/>
+        <path d="M110 22 L161.7 181.2 L26.3 82.8 L193.7 82.8 L58.3 181.2 Z" opacity=".55"/>
+        <circle cx="110" cy="110" r="2.6" fill="currentColor" stroke="none"/>
+      </svg>
+    </figure>
+  </div>
+</section>
+
+<main class="wrap">
+  <section class="section">
+    <div class="section-head">
+      <h2>教材</h2>
+      <p class="count">01</p>
+    </div>
+
+    <div class="cards">
+      <a class="card feature" href="polyhedron.html">
+        <svg class="mark" viewBox="0 0 26 26" fill="currentColor" stroke="rgba(0,0,0,.35)" stroke-width="1.1" aria-hidden="true">
+          <circle cx="13" cy="13" r="11"/>
+          <path d="M13 2 L4 8 L4 18 L13 24 L22 18 L22 8 Z M13 2 L13 8 M4 8 L13 8 M22 8 L13 8 M13 8 L8 16 M13 8 L18 16 M4 18 L8 16 M22 18 L18 16 M13 24 L8 16 M13 24 L18 16" fill="none"/>
+        </svg>
+        <div class="body">
+        <h3>正多面体ラボ</h3>
+        <p>正四面体から正二十面体まで5種類。面・辺・頂点を1つずつ光らせてかぞえ、展開図がたたまれて立体になる様子を見て、指で回していろいろな角度から観察できます。</p>
+        <div class="tags"><span>立体図形</span><span>展開図</span><span>小5〜中1</span></div>
+        </div>
+      </a>
+    </div>
+
+    <p class="note">教材はこれから少しずつ増やしていきます。</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html">ホーム</a>
+    <a href="polyhedron.html">正多面体ラボ</a>
+    <small>&copy; 2026 数学ラボ</small>
+  </div>
+</footer>
+
+</body>
+</html>

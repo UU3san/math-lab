@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正多面体ラボ｜数学ラボ</title>
+<meta name="description" content="正多面体5種類の面・辺・頂点の数をかぞえ、展開図が立体に組み立たる様子を見て、いろいろな角度から観察できる学習アプリです。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ==========================================================
+     正多面体ラボ 本体
+     色の変数は #app の中だけで定義し、サイト共通の変数を上書きしない。
+     ========================================================== */
+  #app{
+    --panel:#fff; --panel2:#f3f6f2; --border:var(--line); --fg:var(--ink);
+    display:grid; grid-template-columns:228px minmax(0,1fr) 264px; gap:20px;
+    align-items:start; max-width:var(--wrap); margin:0 auto; padding:4px 20px 8px;
+    color:var(--fg); line-height:1.65;
+  }
+  #app .panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;box-shadow:var(--shadow);
+  }
+  #app aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+  #app main{display:flex;flex-direction:column;gap:12px;min-width:0}
+  #app h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.68rem;letter-spacing:.16em;color:var(--accent);margin:0 0 11px;font-weight:500;
+  }
+
+  #app .solids{display:flex;flex-direction:column;gap:7px}
+  #app .solid-btn{
+    display:flex;align-items:center;gap:10px;background:#fff;
+    border:1px solid var(--border);color:var(--fg);border-radius:9px;padding:8px 10px;
+    cursor:pointer;font:inherit;font-size:.9rem;text-align:left;line-height:1.35;transition:.15s;
+  }
+  #app .solid-btn:hover{background:var(--accent-soft);border-color:#a9cec0}
+  #app .solid-btn.on{
+    background:var(--accent-soft);border-color:var(--accent);
+    box-shadow:inset 0 0 0 1px var(--accent);
+  }
+  #app .solid-btn small{
+    display:block;color:var(--muted);font-size:.63rem;letter-spacing:.06em;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  #app .solid-btn .ico{width:26px;height:26px;flex:0 0 26px;color:var(--accent)}
+  #app .solid-btn.on .ico{color:var(--accent-dark)}
+
+  /* 立体を見せる窓だけ暗くして、色のついた面を見やすくする */
+  #app .stage{
+    position:relative;height:560px;border-radius:var(--radius);overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  #app canvas{
+    width:100%;height:100%;display:block;cursor:grab;touch-action:none;
+    background:radial-gradient(120% 120% at 50% 14%,#1d2c2a 0%,#0c1413 72%);
+  }
+  #app canvas:active{cursor:grabbing}
+  #app .hint{
+    position:absolute;left:15px;bottom:12px;color:#8ba69c;font-size:.68rem;pointer-events:none;
+  }
+  #app .zoominfo{
+    position:absolute;right:15px;bottom:12px;color:#8ba69c;font-size:.68rem;pointer-events:none;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  #app .counter{
+    position:absolute;left:15px;top:13px;font-size:1.05rem;font-weight:700;
+    color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.75);pointer-events:none;
+  }
+
+  #app .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  #app button.act{
+    background:#fff;border:1px solid var(--border);color:var(--fg);border-radius:8px;
+    padding:9px 13px;cursor:pointer;font:inherit;font-size:.8rem;transition:.15s;
+  }
+  #app button.act:hover{background:var(--accent-soft);border-color:#a9cec0}
+  #app button.act.primary{
+    background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;
+  }
+  #app button.act.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+  #app button.act.zbtn{width:42px;padding:9px 0;font-size:1rem;line-height:1}
+  #app .slider{display:flex;align-items:center;gap:9px;flex:1;min-width:200px}
+  #app .slider input{flex:1;accent-color:var(--accent)}
+  #app .slider span{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  #app .count-btns{display:flex;gap:7px}
+  #app .count-btns button{flex:1}
+  #app .toggles{display:flex;flex-wrap:wrap;gap:7px}
+  #app .toggles label{
+    display:flex;align-items:center;gap:5px;font-size:.75rem;
+    background:var(--panel2);border:1px solid var(--border);border-radius:7px;
+    padding:5px 9px;cursor:pointer;
+  }
+  #app .toggles input{accent-color:var(--accent);margin:0}
+
+  #app table.facts{width:100%;border-collapse:collapse;font-size:.82rem}
+  #app table.facts td{padding:6px 2px;border-bottom:1px solid var(--border)}
+  #app table.facts td.k{color:var(--muted);font-size:.74rem}
+  #app table.facts td.v{
+    text-align:right;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  #app table.facts tr:last-child td{border-bottom:none}
+  #app .euler{
+    margin-top:12px;background:var(--accent-soft);border-radius:9px;padding:11px;
+    text-align:center;font-size:.76rem;color:var(--muted);
+  }
+  #app .euler b{
+    display:inline-block;margin-top:4px;color:var(--accent-dark);font-size:.98rem;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  #app .desc{font-size:.79rem;line-height:1.95;color:#3d4c46}
+  #app :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+  @media(max-width:980px){
+    #app{grid-template-columns:1fr;padding:0 14px 8px;gap:14px}
+    #app aside{display:contents}
+    #app .p1{order:1} #app main{order:2} #app .p3{order:3} #app .p4{order:4}
+    #app .p5{order:5} #app .p6{order:6} #app .p7{order:7}
+    #app .solids{flex-direction:row;flex-wrap:wrap}
+    #app .solid-btn{flex:1 1 145px}
+    #app .stage{height:58vh;min-height:380px}
+    #app button.act{padding:11px 14px}
+    #app button.act.zbtn{width:52px;padding:11px 0;font-size:1.1rem}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <circle cx="16" cy="16" r="13"/>
+        <polygon points="16,4 27,12 23,25 9,25 5,12"/>
+      </svg>
+      <b>数学ラボ<span>MATH LAB</span></b>
+    </a>
+    <nav class="header-nav">
+      <a href="index.html">ホーム</a>
+      <a href="polyhedron.html" class="active">正多面体ラボ</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap page-head">
+  <p class="eyebrow">Platonic Solids</p>
+  <h1>正多面体ラボ</h1>
+  <p>面・辺・頂点をかぞえる ／ 展開図から立体に組み立てる ／ いろいろな角度から見る</p>
+</div>
+
+<div id="app">
+
+<aside>
+  <div class="panel p1">
+    <h2>5つの正多面体</h2>
+    <div class="solids" id="solidList"></div>
+  </div>
+  <div class="panel p3">
+    <h2>かぞえてみる</h2>
+    <div class="count-btns">
+      <button class="act" data-count="face">面</button>
+      <button class="act" data-count="edge">辺</button>
+      <button class="act" data-count="vertex">頂点</button>
+    </div>
+    <p class="desc" style="margin:9px 0 0">ボタンを押すと、1つずつ光らせながらかぞえます。</p>
+  </div>
+  <div class="panel p4">
+    <h2>表示</h2>
+    <div class="toggles">
+      <label><input type="checkbox" id="tgEdge" checked>辺</label>
+      <label><input type="checkbox" id="tgVert" checked>頂点</label>
+      <label><input type="checkbox" id="tgNum">面の番号</label>
+      <label><input type="checkbox" id="tgSpin">自動で回す</label>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <div class="counter" id="counter"></div>
+    <div class="hint">ドラッグで回転 ／ 2本指ピンチ・ホイール・ダブルクリックで拡大縮小</div>
+    <div class="zoominfo" id="zoomInfo">×1.0</div>
+  </div>
+  <div class="controls">
+    <button class="act primary" id="btnFold">展開図にひらく</button>
+    <div class="slider">
+      <span>展開図</span>
+      <input type="range" id="foldRange" min="0" max="1000" value="1000">
+      <span>立体</span>
+    </div>
+    <button class="act" id="btnAnother">別の展開図</button>
+    <button class="act zbtn" id="btnZoomOut" title="縮小">−</button>
+    <button class="act zbtn" id="btnZoomIn" title="拡大">＋</button>
+    <button class="act" id="btnReset">向きと大きさをもどす</button>
+  </div>
+</main>
+
+<aside>
+  <div class="panel p5">
+    <h2>この立体のデータ</h2>
+    <table class="facts">
+      <tr><td class="k">面の形</td><td class="v" id="fShape">-</td></tr>
+      <tr><td class="k">面の数 (F)</td><td class="v" id="fF">-</td></tr>
+      <tr><td class="k">辺の数 (E)</td><td class="v" id="fE">-</td></tr>
+      <tr><td class="k">頂点の数 (V)</td><td class="v" id="fV">-</td></tr>
+      <tr><td class="k">1つの頂点に集まる面</td><td class="v" id="fDeg">-</td></tr>
+      <tr><td class="k">1つの面の角の大きさ</td><td class="v" id="fAng">-</td></tr>
+      <tr><td class="k">となりあう面のなす角</td><td class="v" id="fDih">-</td></tr>
+      <tr><td class="k">双対（うら返しの相手）</td><td class="v" id="fDual">-</td></tr>
+    </table>
+    <div class="euler">オイラーの多面体定理<br>
+      <b id="eu">V − E + F = 2</b></div>
+  </div>
+  <div class="panel p6">
+    <h2>とくちょう</h2>
+    <p class="desc" id="desc">-</p>
+  </div>
+  <div class="panel p7">
+    <h2>正多面体は5種類だけ</h2>
+    <p class="desc">1つの頂点に面が3つ以上集まり、その角の合計が360°より小さくならないと立体になりません。だから正三角形は3・4・5個、正方形と正五角形は3個のときしか作れず、正多面体は5種類しかないのです。</p>
+  </div>
+</aside>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="index.html">ホーム</a>
+    <a href="polyhedron.html">正多面体ラボ</a>
+    <small>&copy; 2026 数学ラボ</small>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ---------- 3D ベクトル / 行列 ---------- */
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const len=a=>Math.hypot(a[0],a[1],a[2]);
+const unit=a=>{const l=len(a)||1;return[a[0]/l,a[1]/l,a[2]/l];};
+const mv=(M,v)=>[M[0]*v[0]+M[1]*v[1]+M[2]*v[2],M[3]*v[0]+M[4]*v[1]+M[5]*v[2],M[6]*v[0]+M[7]*v[1]+M[8]*v[2]];
+function mm(A,B){const C=new Array(9);
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++)C[r*3+c]=A[r*3]*B[c]+A[r*3+1]*B[3+c]+A[r*3+2]*B[6+c];
+  return C;}
+const IDM=[1,0,0,0,1,0,0,0,1];
+function rotAxis(ax,ang){                     // ロドリゲスの回転公式
+  const[a,b,c]=unit(ax),s=Math.sin(ang),t=1-Math.cos(ang),co=Math.cos(ang);
+  return[co+a*a*t, a*b*t-c*s, a*c*t+b*s,
+         b*a*t+c*s, co+b*b*t, b*c*t-a*s,
+         c*a*t-b*s, c*b*t+a*s, co+c*c*t];
+}
+/* ---------- クォータニオン（視点の回転） ---------- */
+const qAxis=(ax,ang)=>{const u=unit(ax),s=Math.sin(ang/2);return[Math.cos(ang/2),u[0]*s,u[1]*s,u[2]*s];};
+function qMul(a,b){return[
+  a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+  a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+  a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+  a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]];}
+function qNorm(q){const l=Math.hypot(q[0],q[1],q[2],q[3])||1;return q.map(x=>x/l);}
+function qMat(q){const[w,x,y,z]=qNorm(q);return[
+  1-2*(y*y+z*z), 2*(x*y-w*z),   2*(x*z+w*y),
+  2*(x*y+w*z),   1-2*(x*x+z*z), 2*(y*z-w*x),
+  2*(x*z-w*y),   2*(y*z+w*x),   1-2*(x*x+y*y)];}
+function qSlerp(a,b,t){
+  let d=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];
+  if(d<0){b=b.map(x=>-x);d=-d;}
+  if(d>0.9995)return qNorm(a.map((x,i)=>x+(b[i]-x)*t));
+  const th=Math.acos(d),s=Math.sin(th),s1=Math.sin((1-t)*th)/s,s2=Math.sin(t*th)/s;
+  return a.map((x,i)=>x*s1+b[i]*s2);
+}
+/* ---------- 正多面体の頂点・面の法線 ---------- */
+const PHI=(1+Math.sqrt(5))/2;
+const CUBE_V=[];for(const x of[1,-1])for(const y of[1,-1])for(const z of[1,-1])CUBE_V.push([x,y,z]);
+const OCTA_V=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const TETRA_V=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];
+const ICO_V=[];for(const s of[1,-1])for(const u of[1,-1]){
+  ICO_V.push([0,s,u*PHI],[s,u*PHI,0],[u*PHI,0,s]);}
+const DODE_V=CUBE_V.slice();for(const s of[1,-1])for(const u of[1,-1]){
+  DODE_V.push([0,s/PHI,u*PHI],[s/PHI,u*PHI,0],[u*PHI,0,s/PHI]);}
+// 面の法線は「双対の立体の頂点方向」。上の頂点集合とは向きがずれた組を使う
+const ICO_N=[];for(const s of[1,-1])for(const u of[1,-1]){
+  ICO_N.push([0,s*PHI,u],[s*PHI,u,0],[u,0,s*PHI]);}
+const DODE_N=CUBE_V.slice();for(const s of[1,-1])for(const u of[1,-1]){
+  DODE_N.push([0,s*PHI,u/PHI],[s*PHI,u/PHI,0],[u/PHI,0,s*PHI]);}
+
+const DEFS={
+  tetra :{jp:'正四面体', en:'Tetrahedron', v:TETRA_V, n:TETRA_V.map(v=>mul(v,-1)), dual:'正四面体',
+    desc:'いちばん小さな正多面体。三角すいの形で、どの面から見ても同じに見えます。自分自身が双対という珍しい立体です。'},
+  cube  :{jp:'正六面体（立方体）', en:'Cube', v:CUBE_V, n:OCTA_V, dual:'正八面体',
+    desc:'いちばん身近な正多面体。サイコロや箱の形です。展開図は全部で11種類あり、「別の展開図」ボタンでいろいろな形を試せます。'},
+  octa  :{jp:'正八面体', en:'Octahedron', v:OCTA_V, n:CUBE_V, dual:'正六面体（立方体）',
+    desc:'四角すいを2つ、そこ同士でくっつけた形。立方体の各面の真ん中を結ぶと、この立体があらわれます。'},
+  dodeca:{jp:'正十二面体', en:'Dodecahedron', v:DODE_V, n:ICO_N, dual:'正二十面体',
+    desc:'正五角形が12枚。となりあう面のなす角が大きく、いちばん球に近づいていく仲間です。サッカーボールのもとになる形でもあります。'},
+  icosa :{jp:'正二十面体', en:'Icosahedron', v:ICO_V, n:DODE_N, dual:'正十二面体',
+    desc:'正三角形が20枚。1つの頂点に5枚も集まります。5種類の中でいちばん面が多く、いちばん球に近い立体です。'}
+};
+const SHAPE={3:'正三角形',4:'正方形',5:'正五角形'};
+
+/* ---------- 立体を組み立てる（面の抽出・辺・隣接） ---------- */
+function buildSolid(def){
+  const R=Math.max(...def.v.map(len));
+  const verts=def.v.map(v=>mul(v,1/R));
+  let faces=def.n.map(n0=>{
+    const n=unit(n0);
+    let mx=-Infinity;verts.forEach(v=>{mx=Math.max(mx,dot(v,n));});
+    const idx=verts.map((v,i)=>i).filter(i=>dot(verts[i],n)>mx-1e-6);
+    const c=mul(idx.reduce((s,i)=>add(s,verts[i]),[0,0,0]),1/idx.length);
+    const u=unit(sub(verts[idx[0]],c)),w=cross(n,u);
+    idx.sort((a,b)=>{
+      const pa=sub(verts[a],c),pb=sub(verts[b],c);
+      return Math.atan2(dot(pa,w),dot(pa,u))-Math.atan2(dot(pb,w),dot(pb,u));});
+    return{idx,n,c};
+  });
+  // 1面目が正面を向くように全体を回しておく（展開したとき画面と平行になる）
+  const n0=faces[0].n, tgt=[0,0,1];
+  let R0=IDM, ax=cross(n0,tgt), s=len(ax);
+  if(s>1e-9) R0=rotAxis(ax,Math.atan2(s,dot(n0,tgt)));
+  else if(dot(n0,tgt)<0) R0=rotAxis([1,0,0],Math.PI);
+  const vv=verts.map(v=>mv(R0,v));
+  faces=faces.map(f=>({idx:f.idx,n:mv(R0,f.n),c:mv(R0,f.c)}));
+
+  // 辺と面の隣接関係
+  const emap=new Map(), edges=[];
+  faces.forEach((f,fi)=>{
+    const m=f.idx.length;
+    for(let k=0;k<m;k++){
+      const a=f.idx[k],b=f.idx[(k+1)%m],key=Math.min(a,b)+'_'+Math.max(a,b);
+      if(!emap.has(key)){emap.set(key,{a:Math.min(a,b),b:Math.max(a,b),faces:[],ref:{f:fi,l:k}});edges.push(emap.get(key));}
+      emap.get(key).faces.push(fi);
+    }
+  });
+  const adj=faces.map(()=>[]);
+  edges.forEach(e=>{const[f1,f2]=e.faces;adj[f1].push({f:f2,a:e.a,b:e.b});adj[f2].push({f:f1,a:e.a,b:e.b});});
+  const vref=vv.map(()=>null), vdeg=vv.map(()=>0), vfaces=vv.map(()=>[]);
+  faces.forEach((f,fi)=>f.idx.forEach((vi,l)=>{vdeg[vi]++;vfaces[vi].push({f:fi,l});if(!vref[vi])vref[vi]={f:fi,l};}));
+  return{verts:vv,faces,edges,adj,vref,vdeg,vfaces};
+}
+
+/* ---------- 展開図の折りたたみ（全域木＋ちょうつがい回転） ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function buildTree(S,seed){
+  const F=S.faces.length,parent=new Array(F).fill(-1),hinge=new Array(F).fill(null),order=[0];
+  const seen=new Array(F).fill(false);seen[0]=true;
+  const rnd=mulberry32(seed||1),q=[0];
+  while(q.length){
+    const f=q.shift();
+    const nb=S.adj[f].slice();
+    if(seed){for(let i=nb.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[nb[i],nb[j]]=[nb[j],nb[i]];}}
+    for(const e of nb){
+      if(seen[e.f])continue;
+      seen[e.f]=true;parent[e.f]=f;
+      const u=unit(sub(S.verts[e.b],S.verts[e.a]));
+      const np=S.faces[f].n, nc=S.faces[e.f].n;
+      const phi=Math.atan2(dot(u,cross(nc,np)),dot(nc,np)); // 親の面と同じ平面に開く角
+      hinge[e.f]={a:e.a,b:e.b,phi};
+      order.push(e.f);q.push(e.f);
+    }
+  }
+  return{parent,hinge,order};
+}
+// t=1:立体 / t=0:展開図
+function foldGeometry(S,T,t){
+  const F=S.faces.length,Rs=new Array(F),Ts=new Array(F),out=new Array(F);
+  for(const f of T.order){
+    if(T.parent[f]<0){Rs[f]=IDM;Ts[f]=[0,0,0];}
+    else{
+      const p=T.parent[f],h=T.hinge[f];
+      const A0=add(mv(Rs[p],S.verts[h.a]),Ts[p]), A1=add(mv(Rs[p],S.verts[h.b]),Ts[p]);
+      const Q=rotAxis(sub(A1,A0),h.phi*(1-t));
+      Rs[f]=mm(Q,Rs[p]);
+      Ts[f]=add(mv(Q,sub(Ts[p],A0)),A0);
+    }
+    out[f]=S.faces[f].idx.map(i=>add(mv(Rs[f],S.verts[i]),Ts[f]));
+  }
+  return out;
+}
+
+/* ---------- 状態 ---------- */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const st={
+  key:'cube', S:null, T:null, seed:0,
+  t:1, target:1, anim:0, qFrom:null, qTo:null,
+  q:qMul(qAxis([0,1,0],0.62),qAxis([1,0,0],-0.42)),
+  zoom:1, fit:1, spin:false, showEdge:true, showVert:true, showNum:false,
+  center:[0,0,0], radius:1, ready:false,
+  count:null, countI:-1, countT:0, countWait:false
+};
+function loadSolid(key,seed){
+  st.key=key; st.seed=seed||0;
+  st.S=buildSolid(DEFS[key]);
+  st.T=buildTree(st.S,st.seed);
+  st.ready=false;
+  st.count=null;updateCounter();
+  updateFacts();
+}
+/* ---------- 情報パネル ---------- */
+function updateFacts(){
+  const S=st.S,d=DEFS[st.key];
+  const F=S.faces.length,E=S.edges.length,V=S.verts.length,m=S.faces[0].idx.length,deg=S.vdeg[0];
+  const inner=(m-2)*180/m;
+  const e0=S.edges[0],n1=S.faces[e0.faces[0]].n,n2=S.faces[e0.faces[1]].n;
+  const dih=180-Math.acos(Math.max(-1,Math.min(1,dot(n1,n2))))*180/Math.PI;
+  const set=(id,v)=>document.getElementById(id).textContent=v;
+  set('fShape',SHAPE[m]); set('fF',F+'枚'); set('fE',E+'本'); set('fV',V+'個');
+  set('fDeg',deg+'枚'); set('fAng',inner.toFixed(inner%1?1:0)+'°');
+  set('fDih',dih.toFixed(1)+'°'); set('fDual',d.dual);
+  set('eu',`${V} − ${E} + ${F} = ${V-E+F}`);
+  document.getElementById('desc').textContent=d.desc;
+  document.querySelectorAll('.solid-btn').forEach(b=>b.classList.toggle('on',b.dataset.k===st.key));
+}
+function updateCounter(){
+  const el=document.getElementById('counter');
+  if(!st.count){el.textContent='';return;}
+  const S=st.S,total={face:S.faces.length,edge:S.edges.length,vertex:S.verts.length}[st.count];
+  const lab={face:'面',edge:'辺',vertex:'頂点'}[st.count];
+  const n=Math.min(st.countI+1,total);
+  el.textContent=(n>=total&&!st.countWait)?`${lab}の数は ${total}`:`${lab}  ${n} / ${total}`;
+}
+/* ---------- 描画 ---------- */
+const DPR=()=>Math.min(devicePixelRatio||1,2);
+function shade(nv){
+  const L=unit([0.35,0.65,0.85]);
+  return 0.42+0.58*Math.abs(dot(nv,L));
+}
+function render(){
+  const w=cv.clientWidth,h=cv.clientHeight,dpr=DPR();
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const S=st.S,geo=foldGeometry(S,st.T,st.t),snap=!st.ready;
+  // 中心と大きさを求めて画面に収める
+  let lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];
+  geo.forEach(f=>f.forEach(p=>{for(let i=0;i<3;i++){if(p[i]<lo[i])lo[i]=p[i];if(p[i]>hi[i])hi[i]=p[i];}}));
+  const c=[0,1,2].map(i=>(lo[i]+hi[i])/2);
+  let rad=0;geo.forEach(f=>f.forEach(p=>{rad=Math.max(rad,len(sub(p,c)));}));
+  if(snap){st.center=c;st.radius=rad;st.ready=true;}
+  else{const k=0.25;st.center=st.center.map((v,i)=>v+(c[i]-v)*k);st.radius+=(rad-st.radius)*k;}
+  const Rv=qMat(st.q),D=6,f=0.40*Math.min(w,h)*D*st.zoom*st.fit,cx=w/2,cy=h/2,sc=1/(st.radius||1);
+  const proj=[],view=[],depth=[];
+  geo.forEach((face,i)=>{
+    const v3=face.map(p=>mv(Rv,mul(sub(p,st.center),sc)));
+    view[i]=v3;
+    proj[i]=v3.map(p=>[cx+f*p[0]/(D-p[2]),cy-f*p[1]/(D-p[2])]);
+    depth[i]=v3.reduce((s,p)=>s+p[2],0)/v3.length;
+  });
+  // 投影された大きさを見て、立体でも展開図でも画面いっぱいに収まるよう調整
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  proj.forEach(pp=>pp.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}));
+  // 自動フィットは「ズーム1倍のときの大きさ」に合わせる（ズーム操作を打ち消さないように）
+  const kfit=Math.min(0.90*w/Math.max(2,x1-x0),0.90*h/Math.max(2,y1-y0))*st.zoom;
+  st.fit=Math.max(0.05,Math.min(20,st.fit*(snap?kfit:1+(kfit-1)*0.22)));
+  const order=geo.map((_,i)=>i).sort((a,b)=>depth[a]-depth[b]);
+  const F=geo.length,hi2=st.count,front=new Array(F).fill(false);
+  ctx.lineJoin='round';
+  order.forEach(i=>{
+    const p=proj[i],v3=view[i];
+    const nv=unit(cross(sub(v3[1],v3[0]),sub(v3[2],v3[0])));
+    const sh=shade(nv);front[i]=nv[2]>0;
+    const hue=(i*360/F+205)%360;
+    const lit=(hi2==='face'&&i===st.countI);
+    ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);
+    for(let k=1;k<p.length;k++)ctx.lineTo(p[k][0],p[k][1]);
+    ctx.closePath();
+    ctx.fillStyle=lit?`hsl(45 100% ${Math.round(52*sh+26)}%)`
+                     :`hsl(${hue} 58% ${Math.round(58*sh)}%)`;
+    ctx.fill();
+    if(st.showEdge){ctx.strokeStyle='rgba(8,12,20,.75)';ctx.lineWidth=1.4;ctx.stroke();}
+    if(st.showVert){                       // 頂点は面ごとに描く（裏側が透けないように）
+      ctx.fillStyle='#f2f7ff';ctx.strokeStyle='rgba(8,12,20,.7)';ctx.lineWidth=1;
+      p.forEach(q=>{ctx.beginPath();ctx.arc(q[0],q[1],3.2,0,7);ctx.fill();ctx.stroke();});
+    }
+    if(st.showNum){
+      const cxx=p.reduce((s,q)=>s+q[0],0)/p.length,cyy=p.reduce((s,q)=>s+q[1],0)/p.length;
+      ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.lineWidth=3.5;ctx.strokeStyle='rgba(8,12,22,.85)';ctx.strokeText(String(i+1),cxx,cyy);
+      ctx.fillStyle='#fff';ctx.fillText(String(i+1),cxx,cyy);
+    }
+  });
+  // かぞえるハイライト（辺・頂点）
+  if(st.count==='edge'&&st.countI>=0){
+    const e=S.edges[Math.min(st.countI,S.edges.length-1)],ref=e.ref,fp=proj[ref.f];
+    const a=fp[ref.l],b=fp[(ref.l+1)%fp.length];
+    const vis=e.faces.some(fi=>front[fi]);
+    ctx.strokeStyle=vis?'#ffd166':'rgba(255,209,102,.38)';ctx.lineWidth=5;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+  }
+  if(st.count==='vertex'&&st.countI>=0){
+    const vi=Math.min(st.countI,S.verts.length-1),r=S.vref[vi],p=proj[r.f][r.l];
+    const vis=S.vfaces[vi].some(x=>front[x.f]);
+    ctx.fillStyle=vis?'#ffd166':'rgba(255,209,102,.38)';
+    ctx.strokeStyle='rgba(8,12,20,.8)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(p[0],p[1],7,0,7);ctx.fill();ctx.stroke();
+  }
+}
+
+/* ---------- アニメーション ---------- */
+const ease=x=>x<0.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000,0.05);last=now;
+  if(st.anim>0){                                   // 展開・組み立て
+    st.anim=Math.max(0,st.anim-dt/1.7);
+    const p=ease(1-st.anim);
+    st.t=st.from+(st.target-st.from)*p;
+    if(st.qFrom)st.q=qSlerp(st.qFrom,st.qTo,p);
+    document.getElementById('foldRange').value=Math.round(st.t*1000);
+    if(st.anim===0){st.t=st.target;st.qFrom=null;syncFoldBtn();}
+  }
+  if(st.spin&&!st.dragging&&!REDUCED.matches)st.q=qMul(qAxis([0,1,0],0.45*dt),st.q);
+  if(st.count){                                    // かぞえる
+    if(st.countWait){ if(st.t>0.999)st.countWait=false; }
+    else{
+      st.countT+=dt;
+      const total={face:st.S.faces.length,edge:st.S.edges.length,vertex:st.S.verts.length}[st.count];
+      const step=st.count==='face'?0.34:0.26;
+      if(st.countT>step&&st.countI<total-1){st.countT=0;st.countI++;updateCounter();}
+      else if(st.countI>=total-1&&st.countT>1.6){st.count=null;st.countI=-1;
+        st.spin=!!st.spinWas;document.getElementById('tgSpin').checked=st.spin;}
+      if(st.count&&st.countI<0){st.countI=0;updateCounter();}  // 最後の答えは残す
+    }
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)');
+function setFold(target,move){
+  const q1=target<0.5?[1,0,0,0]:qMul(qAxis([0,1,0],0.62),qAxis([1,0,0],-0.42));
+  if(REDUCED.matches){                       // 動きを減らす設定のときは一気に切りかえ
+    st.t=st.target=target;st.anim=0;if(move)st.q=q1;
+    document.getElementById('foldRange').value=Math.round(target*1000);syncFoldBtn();return;
+  }
+  st.from=st.t;st.target=target;st.anim=1;
+  if(move){st.qFrom=st.q;st.qTo=q1;}else st.qFrom=null;
+}
+function syncFoldBtn(){
+  document.getElementById('btnFold').textContent=st.t>0.5?'展開図にひらく':'立体に組み立てる';
+}
+/* ---------- 立体えらびボタン ---------- */
+const ICONS={
+ tetra:'<polygon points="13,2 24,22 2,22" /><path d="M13 2 L16 15 M2 22 L16 15 M24 22 L16 15" fill="none"/>',
+ cube:'<path d="M4 8 L13 3 L22 8 L22 18 L13 23 L4 18 Z"/><path d="M4 8 L13 13 L22 8 M13 13 L13 23" fill="none"/>',
+ octa:'<path d="M13 1 L23 13 L13 25 L3 13 Z"/><path d="M3 13 L13 9 L23 13 M13 9 L13 25" fill="none"/>',
+ dodeca:'<circle cx="13" cy="13" r="11"/><path d="M13 4 L20 9 L17 17 L9 17 L6 9 Z" fill="none"/>',
+ icosa:'<circle cx="13" cy="13" r="11"/><path d="M13 2 L4 8 L4 18 L13 24 L22 18 L22 8 Z M13 2 L13 8 M4 8 L13 8 M22 8 L13 8 M13 8 L8 16 M13 8 L18 16 M4 18 L8 16 M22 18 L18 16 M13 24 L8 16 M13 24 L18 16" fill="none"/>'
+};
+const list=document.getElementById('solidList');
+Object.keys(DEFS).forEach(k=>{
+  const b=document.createElement('button');
+  b.className='solid-btn';b.dataset.k=k;
+  b.innerHTML=`<svg class="ico" viewBox="0 0 26 26" fill="currentColor" stroke="rgba(0,0,0,.55)" stroke-width="1.2">${ICONS[k]}</svg>`
+    +`<span>${DEFS[k].jp}<small>${DEFS[k].en}</small></span>`;
+  b.onclick=()=>{const wasFlat=st.t<0.5;loadSolid(k,0);st.t=st.target=wasFlat?0:1;st.anim=0;syncFoldBtn();
+    document.getElementById('foldRange').value=Math.round(st.t*1000);};
+  list.appendChild(b);
+});
+/* ---------- 操作 ---------- */
+const btnFold=document.getElementById('btnFold');
+btnFold.onclick=()=>{st.spin=false;document.getElementById('tgSpin').checked=false;
+  setFold(st.t>0.5?0:1,true);st.count=null;updateCounter();};
+document.getElementById('foldRange').oninput=e=>{
+  st.anim=0;st.t=st.target=e.target.value/1000;syncFoldBtn();};
+document.getElementById('btnAnother').onclick=()=>{
+  loadSolid(st.key,(Math.random()*1e9)|0);
+  if(st.t>0.5)setFold(0,true);
+  document.getElementById('foldRange').value=Math.round(st.t*1000);syncFoldBtn();};
+document.getElementById('btnReset').onclick=()=>{
+  st.qFrom=st.q;st.qTo=qMul(qAxis([0,1,0],0.62),qAxis([1,0,0],-0.42));
+  st.from=st.t;st.target=st.t;st.anim=1;setZoom(1);};
+document.getElementById('tgEdge').onchange=e=>st.showEdge=e.target.checked;
+document.getElementById('tgVert').onchange=e=>st.showVert=e.target.checked;
+document.getElementById('tgNum').onchange=e=>st.showNum=e.target.checked;
+document.getElementById('tgSpin').onchange=e=>st.spin=e.target.checked;
+document.querySelectorAll('[data-count]').forEach(b=>{
+  b.onclick=()=>{
+    st.count=b.dataset.count;st.countI=-1;st.countT=0;
+    if(st.t<0.999){setFold(1,false);st.countWait=true;}else st.countWait=false;
+    st.spinWas=st.spin;st.spin=true;document.getElementById('tgSpin').checked=true;
+    updateCounter();};
+});
+/* ドラッグで回転・2本指ピンチで拡大縮小 */
+const ZMIN=0.35,ZMAX=6;
+function setZoom(z){
+  st.zoom=Math.min(ZMAX,Math.max(ZMIN,z));
+  document.getElementById('zoomInfo').textContent='×'+st.zoom.toFixed(1);
+}
+const ptrs=new Map();let pinchD=0,pinchZ=1;
+const dist=()=>{const p=[...ptrs.values()];return Math.hypot(p[0][0]-p[1][0],p[0][1]-p[1][1]);};
+cv.addEventListener('pointerdown',e=>{
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===2){pinchD=dist();pinchZ=st.zoom;}
+  st.dragging=ptrs.size===1;
+});
+cv.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;
+  const prev=ptrs.get(e.pointerId);
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size>=2){                       // 2本指のあいだは回さず、指の間隔で拡大縮小
+    if(pinchD>0)setZoom(pinchZ*dist()/pinchD);
+    return;
+  }
+  if(!st.dragging)return;
+  const dx=e.clientX-prev[0],dy=e.clientY-prev[1];
+  st.q=qMul(qMul(qAxis([0,1,0],dx*0.008),qAxis([1,0,0],dy*0.008)),st.q);
+  st.qFrom=null;
+});
+const release=e=>{
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2)pinchD=0;
+  st.dragging=ptrs.size===1;
+};
+cv.addEventListener('pointerup',release);
+cv.addEventListener('pointercancel',release);
+cv.addEventListener('lostpointercapture',release);
+cv.addEventListener('wheel',e=>{e.preventDefault();
+  setZoom(st.zoom*Math.exp(-e.deltaY*0.0015));},{passive:false});
+cv.addEventListener('dblclick',()=>setZoom(st.zoom<1.6?2.2:1));
+document.getElementById('btnZoomIn').onclick=()=>setZoom(st.zoom*1.35);
+document.getElementById('btnZoomOut').onclick=()=>setZoom(st.zoom/1.35);
+addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault();btnFold.click();}
+});
+loadSolid('cube',0);syncFoldBtn();requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

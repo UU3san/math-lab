@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フォニックスラボ｜学びラボ</title>
+<meta name="description" content="アルファベットが出す音を、口の形の図と読み上げ音声で確かめる学習アプリ。マジックEなどのつづりのルールを動かして試し、3つの音をつないで単語を読む練習ができます。">
+<meta name="author" content="株式会社日本総合教育舎">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ==========================================================
+     フォニックスラボ 本体
+     色の変数は #app の中だけで定義し、サイト共通の変数は上書きしない。
+     教材の中は英語の色（藍）にそろえる。
+     ========================================================== */
+  #app{
+    --accent:var(--accent-en);
+    --accent-dark:var(--accent-en-dark);
+    --accent-soft:var(--accent-en-soft);
+    --lip:#d98b8b; --lip-dark:#b96f6f; --mouth:#3a2224; --tongue:#e2909a; --tooth:#fdfcfa;
+    max-width:var(--wrap);margin:0 auto;padding:4px 20px 8px;
+    display:flex;flex-direction:column;gap:26px;
+  }
+  #app .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);
+  }
+  #app h2{
+    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:1.1rem;
+  }
+  #app h3{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:.98rem}
+  #app .lead{font-size:.85rem;color:var(--muted);margin-top:6px;max-width:64ch}
+  #app .sec-head{
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-top:2px solid var(--ink);padding-top:12px;margin-bottom:16px;
+  }
+  #app .sec-head .step{
+    font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.18em;
+    color:var(--accent);font-weight:500;margin-left:auto;
+  }
+  #app :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+  /* ---------- 音声のバー ---------- */
+  #app .audiobar{
+    display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;
+    background:var(--accent-soft);border:1px solid #ccd2ee;border-radius:var(--radius);
+    padding:12px 16px;font-size:.8rem;
+  }
+  #app .audiobar .st{display:flex;align-items:center;gap:8px;color:var(--accent-dark);font-weight:700}
+  #app .audiobar .dot{width:9px;height:9px;border-radius:50%;background:#b9c0dd;flex:0 0 9px}
+  #app .audiobar.ready .dot{background:var(--accent)}
+  #app .audiobar.bad .dot{background:var(--mark)}
+  #app .audiobar .note{color:var(--muted);font-size:.75rem}
+  #app .pickvoice{display:flex;align-items:center;gap:8px}
+  #app .pickvoice select{
+    font:inherit;font-size:.78rem;color:var(--accent-dark);background:#fff;
+    border:1px solid #ccd2ee;border-radius:8px;padding:5px 8px;max-width:210px;
+  }
+  #app .speed{display:flex;align-items:center;gap:8px;margin-left:auto}
+  #app .speed input{accent-color:var(--accent);width:130px}
+  #app .speed b{
+    font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--accent-dark);
+    min-width:2.6em;text-align:right;
+  }
+
+  /* ---------- 1. 音のしくみ ---------- */
+  #app .lab{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+  #app .picker{display:flex;flex-direction:column;gap:14px}
+  #app .pgroup > p{
+    font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.14em;
+    color:var(--muted);margin-bottom:7px;
+  }
+  #app .chips{display:flex;flex-wrap:wrap;gap:6px}
+  #app .chip{
+    min-width:46px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;
+    background:#fff;color:var(--ink);cursor:pointer;font:inherit;line-height:1.2;
+    display:flex;flex-direction:column;align-items:center;gap:2px;transition:.14s;
+  }
+  #app .chip b{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:500}
+  #app .chip small{font-size:.6rem;color:var(--muted)}
+  #app .chip:hover{background:var(--accent-soft);border-color:#aab3dd}
+  #app .chip.on{
+    background:var(--accent);border-color:var(--accent);color:#fff;
+  }
+  #app .chip.on small{color:#dfe3f7}
+
+  #app .viewer{
+    background:var(--accent-soft);border:1px solid #ccd2ee;border-radius:var(--radius);
+    padding:16px;display:flex;flex-direction:column;gap:12px;position:sticky;top:74px;
+  }
+  #app .viewer .now{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  #app .viewer .now b{
+    font-family:'IBM Plex Mono',monospace;font-size:1.9rem;color:var(--accent-dark);line-height:1;
+  }
+  #app .viewer .now span{font-size:.95rem;font-weight:700}
+  #app .viewer .now i{font-style:normal;font-size:.75rem;color:var(--muted);margin-left:auto}
+  #app .mouth{
+    background:#fff;border-radius:10px;padding:4px;
+  }
+  #app .mouth svg{width:100%;height:auto;display:block}
+  #app .tongueMark{opacity:0}
+  #app .zonebar{display:flex;gap:3px}
+  #app .zonebar span{
+    flex:1;text-align:center;font-size:.6rem;padding:5px 1px;border-radius:6px;
+    background:#fff;color:var(--muted);border:1px solid #dfe3f3;line-height:1.3;
+  }
+  #app .zonebar span.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  #app .zonebar.dim span{opacity:.45}
+  #app .vbadge{
+    display:flex;align-items:center;gap:9px;background:#fff;border-radius:9px;padding:8px 11px;
+    font-size:.76rem;color:var(--muted);
+  }
+  #app .vbadge b{color:var(--accent-dark)}
+  #app .throat{width:34px;height:20px;flex:0 0 34px}
+  #app .throat path{stroke:#b9c0dd;stroke-width:2;fill:none;stroke-linecap:round}
+  #app .vbadge.voiced .throat path{stroke:var(--accent);animation:buzz .5s ease-in-out infinite alternate}
+  @keyframes buzz{from{transform:translateY(-1px)}to{transform:translateY(1px)}}
+  #app .tip{font-size:.79rem;line-height:1.85;color:#3a3f52;background:#fff;border-radius:9px;padding:10px 12px}
+  #app .playrow{display:flex;gap:8px}
+
+  /* ---------- ボタン ---------- */
+  #app button.act{
+    background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;
+    padding:9px 13px;cursor:pointer;font:inherit;font-size:.8rem;transition:.14s;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  #app button.act:hover{background:var(--accent-soft);border-color:#aab3dd}
+  #app button.act.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+  #app button.act.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+  #app button.act .pl{font-size:.7rem;line-height:1}
+  #app button.act[disabled]{opacity:.45;cursor:default}
+  #app .playrow button{flex:1;justify-content:center}
+
+  /* ---------- 2. 音の一覧 ---------- */
+  #app .tablegroup{margin-top:18px}
+  #app .tablegroup:first-of-type{margin-top:0}
+  #app .tablegroup > h3{
+    display:flex;align-items:baseline;gap:10px;margin-bottom:9px;
+  }
+  #app .tablegroup > h3 em{
+    font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:.66rem;
+    letter-spacing:.12em;color:var(--muted);font-weight:400;
+  }
+  #app .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:8px}
+  #app .sc{
+    border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 10px;
+    display:flex;flex-direction:column;gap:3px;cursor:pointer;font:inherit;text-align:left;
+    color:var(--ink);transition:.14s;
+  }
+  #app .sc:hover{border-color:var(--accent);background:var(--accent-soft)}
+  #app .sc .g{
+    font-family:'IBM Plex Mono',monospace;font-size:1.12rem;color:var(--accent-dark);
+    display:flex;align-items:baseline;gap:7px;
+  }
+  #app .sc .g s{text-decoration:none;font-size:.68rem;color:var(--muted)}
+  #app .sc .w{font-size:.78rem;color:#3a3f52}
+  #app .sc .w b{font-weight:700;color:var(--accent-dark)}
+  #app .sc .j{font-size:.68rem;color:var(--muted)}
+
+  /* ---------- 3. ルール ---------- */
+  #app .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  #app .rule{border:1px solid var(--line);border-radius:11px;padding:15px;background:#fff}
+  #app .rule h3{color:var(--accent-dark);margin-bottom:6px}
+  #app .rule p{font-size:.79rem;line-height:1.85;color:#3a3f52}
+  #app .words{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  #app .wbtn{
+    border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--accent-dark);
+    padding:5px 12px;cursor:pointer;font:inherit;font-size:.78rem;transition:.14s;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  #app .wbtn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  #app .wbtn u{text-decoration:none;color:var(--mark);font-weight:700}
+  #app .rule .jp{font-size:.7rem;color:var(--muted);margin-top:7px}
+
+  /* マジックE */
+  #app .magic{
+    grid-column:1/-1;background:var(--accent-soft);border-color:#ccd2ee;
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:18px;align-items:center;
+  }
+  #app .magic .stage{
+    background:#fff;border-radius:10px;padding:18px 14px;text-align:center;
+  }
+  #app .mword{
+    font-family:'IBM Plex Mono',monospace;font-size:2.5rem;letter-spacing:.06em;
+    color:var(--ink);line-height:1.2;
+  }
+  #app .mword i{font-style:normal;transition:color .2s}
+  #app .mword i.v{color:var(--mark);font-weight:500}
+  #app .mword i.e{color:var(--accent);opacity:0;transition:opacity .2s}
+  #app .mword.on i.e{opacity:1}
+  #app .mkana{font-size:.85rem;color:var(--accent-dark);font-weight:700;margin-top:4px}
+  #app .mjp{font-size:.72rem;color:var(--muted)}
+  #app .mctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
+  #app .switch{
+    display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:6px 14px 6px 8px;cursor:pointer;font-size:.8rem;font-weight:700;
+  }
+  #app .switch .track{
+    width:38px;height:21px;border-radius:999px;background:#ccd2e4;position:relative;transition:.18s;
+  }
+  #app .switch .track::after{
+    content:'';position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;
+    background:#fff;transition:.18s;
+  }
+  #app .switch.on .track{background:var(--accent)}
+  #app .switch.on .track::after{transform:translateX(17px)}
+
+  /* ---------- 4. ブレンド ---------- */
+  #app .blend{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:20px;align-items:start}
+  #app .drums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  #app .drum{
+    border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px;
+    display:flex;flex-direction:column;gap:8px;align-items:center;
+  }
+  #app .drum > p{
+    font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--muted);
+  }
+  #app .drum .face{
+    font-family:'IBM Plex Mono',monospace;font-size:2.1rem;color:var(--accent-dark);
+    line-height:1.1;min-height:1.1em;
+  }
+  #app .drum .nav{display:flex;gap:6px;width:100%}
+  #app .drum .nav button{
+    flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 0;
+    cursor:pointer;font:inherit;font-size:.9rem;color:var(--accent-dark);transition:.14s;
+  }
+  #app .drum .nav button:hover{background:var(--accent-soft);border-color:var(--accent)}
+  #app .out{
+    background:var(--accent-soft);border:1px solid #ccd2ee;border-radius:var(--radius);
+    padding:16px;display:flex;flex-direction:column;gap:12px;text-align:center;
+  }
+  #app .out .word{
+    font-family:'IBM Plex Mono',monospace;font-size:2.3rem;color:var(--ink);letter-spacing:.05em;
+  }
+  #app .out .word span{transition:color .15s}
+  #app .out .word span.hi{color:var(--mark)}
+  #app .verdict{font-size:.78rem;font-weight:700;color:var(--muted);min-height:1.6em}
+  #app .verdict.real{color:var(--accent-dark)}
+  #app .out .playrow{flex-direction:column}
+  #app .dice{align-self:center}
+
+  #app .foot-note{
+    font-size:.76rem;color:var(--muted);border-left:3px solid var(--line);padding-left:14px;
+  }
+
+  @media(max-width:980px){
+    #app{padding:0 14px 8px;gap:22px}
+    #app .lab{grid-template-columns:1fr}
+    #app .viewer{position:static;order:-1}
+    #app .magic{grid-template-columns:1fr}
+    #app .blend{grid-template-columns:1fr}
+    #app button.act{padding:11px 14px}
+    #app .chip{min-width:52px;padding:9px 11px}
+    #app .zonebar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+    #app .zonebar span{font-size:.66rem;padding:6px 2px}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <circle cx="16" cy="16" r="13"/>
+        <polygon points="16,4 27,12 23,25 9,25 5,12"/>
+      </svg>
+      <b>学びラボ<span>LEARNING LAB</span></b>
+    </a>
+    <nav class="header-nav">
+      <a href="index.html">ホーム</a>
+      <a href="index.html#materials">教材</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap page-head">
+  <p class="eyebrow en">Phonics</p>
+  <h1>フォニックスラボ</h1>
+  <p>文字が出す「音」を、口の形の図と音で確かめる ／ つづりのルールを動かして試す ／ 音をつないで単語を読む</p>
+</div>
+
+<div id="app">
+
+  <div class="audiobar" id="audiobar">
+    <span class="st"><span class="dot"></span><span id="voiceState">音声を準備しています…</span></span>
+    <label class="pickvoice" id="pickVoiceWrap" hidden>
+      <span style="font-size:.75rem;color:var(--muted)">声</span>
+      <select id="voiceSel"></select>
+    </label>
+    <span class="note" id="voiceNote">音が出ないときは、画面のどこかを一度タップしてから、もう一度押してください。</span>
+    <label class="speed">
+      <span style="font-size:.75rem;color:var(--muted)">読む速さ</span>
+      <input type="range" id="rate" min="0.5" max="1.1" step="0.05" value="0.85">
+      <b id="rateV">0.85</b>
+    </label>
+  </div>
+
+  <!-- ================= 1. 音のしくみ ================= -->
+  <section class="panel">
+    <div class="sec-head">
+      <h2>音のしくみを見る</h2>
+      <p class="step">01 / SOUNDS</p>
+    </div>
+    <p class="lead">文字を選ぶと、その音を出すときの<b>口の形</b>・<b>舌を使う場所</b>・<b>のどがふるえるかどうか</b>が出ます。英語の音は、この3つの組み合わせで決まります。</p>
+
+    <div class="lab" style="margin-top:16px">
+      <div class="picker" id="picker"></div>
+
+      <div class="viewer">
+        <div class="now">
+          <b id="vG">b</b><span id="vKana">ブ</span><i id="vType">子音</i>
+        </div>
+
+        <div class="mouth">
+          <svg viewBox="0 0 240 168" role="img" aria-labelledby="mouthTitle">
+            <title id="mouthTitle">口の形の図</title>
+            <defs>
+              <clipPath id="clipCav"><ellipse id="cavClip" cx="120" cy="84" rx="56" ry="26"/></clipPath>
+            </defs>
+            <!-- 口のまわり -->
+            <rect x="6" y="4" width="228" height="160" rx="74" fill="#f6efe9"/>
+            <!-- くちびる -->
+            <ellipse id="lipOut" cx="120" cy="84" rx="72" ry="38" fill="var(--lip)"/>
+            <ellipse id="lipIn" cx="120" cy="84" rx="56" ry="26" fill="var(--mouth)"/>
+            <g clip-path="url(#clipCav)">
+              <!-- 上の歯 -->
+              <g id="teethUp">
+                <rect x="40" y="58" width="160" height="15" rx="4" fill="var(--tooth)"/>
+                <path d="M62 58v15M84 58v15M106 58v15M128 58v15M150 58v15M172 58v15"
+                      stroke="#e3ddd4" stroke-width="1.2"/>
+              </g>
+              <!-- 舌 -->
+              <ellipse id="tongue" cx="120" cy="104" rx="46" ry="22" fill="var(--tongue)"/>
+            </g>
+            <!-- 歯を下くちびるに当てる形（f, v） -->
+            <g id="lipBite" opacity="0">
+              <rect x="62" y="80" width="116" height="13" rx="4" fill="var(--tooth)" stroke="#e3ddd4"/>
+            </g>
+            <!-- 歯の間から出す舌（th） -->
+            <ellipse id="tongueOut" cx="120" cy="80" rx="46" ry="13" fill="var(--tongue)"
+                     stroke="var(--lip-dark)" stroke-width="1.5" opacity="0"/>
+            <ellipse id="lipRing" cx="120" cy="84" rx="72" ry="38"
+                     fill="none" stroke="var(--lip-dark)" stroke-width="2.5"/>
+          </svg>
+        </div>
+
+        <div class="zonebar" id="zonebar">
+          <span data-z="lips">くち<br>びる</span>
+          <span data-z="lipteeth">歯と<br>くちびる</span>
+          <span data-z="teeth">舌先と<br>歯</span>
+          <span data-z="ridge">舌先と<br>歯ぐき</span>
+          <span data-z="mid">舌の<br>まん中</span>
+          <span data-z="back">舌の<br>おく</span>
+          <span data-z="throat">のど</span>
+        </div>
+
+        <div class="vbadge" id="vbadge">
+          <svg class="throat" viewBox="0 0 34 20" aria-hidden="true">
+            <path d="M4 10c3-6 6 6 9 0s6 6 9 0 6 6 8 0"/>
+          </svg>
+          <span id="vVoice">のどはふるえない（息だけの音）</span>
+        </div>
+
+        <p class="tip" id="vTip">くちびるを閉じて、ためた息をぱっと開く。</p>
+
+        <div class="playrow">
+          <button class="act primary" id="playSound"><span class="pl">▶</span>音を聞く</button>
+          <button class="act" id="playWord"><span class="pl">▶</span><span id="vWordBtn">bat</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. 音の一覧 ================= -->
+  <section class="panel">
+    <div class="sec-head">
+      <h2>音の一覧</h2>
+      <p class="step">02 / CHART</p>
+    </div>
+    <p class="lead">カードを押すと例の単語を読みます。英語の文字は26個ですが、音は40以上あります。「2文字で1つの音」を覚えると、読める単語が一気に増えます。</p>
+    <div id="chart" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ================= 3. ルール ================= -->
+  <section class="panel">
+    <div class="sec-head">
+      <h2>つづりのルール</h2>
+      <p class="step">03 / RULES</p>
+    </div>
+    <p class="lead">英語のつづりは、でたらめに読むのではありません。よく出るルールから覚えると、はじめて見る単語も読めるようになります。単語を押すと読み上げます。</p>
+
+    <div class="rules" style="margin-top:16px">
+
+      <div class="rule magic">
+        <div>
+          <h3>ルール1　マジックE（さいごの e）</h3>
+          <p>単語のさいごに <b>e</b> がつくと、その e 自身は読まれません。そのかわり、前の母音が<b>アルファベットの名前どおりの読み方</b>に変わります。魔法をかけるので「マジックE」と呼びます。</p>
+          <p class="jp">スイッチを動かして、同じ単語がどう変わるか聞きくらべてください。</p>
+          <div class="mctl">
+            <button class="switch" id="magicSw" aria-pressed="false">
+              <span class="track"></span><span>e をつける</span>
+            </button>
+            <button class="act" id="magicNext">ほかの単語</button>
+          </div>
+        </div>
+        <div class="stage">
+          <p class="mword" id="mWord"></p>
+          <p class="mkana" id="mKana"></p>
+          <p class="mjp" id="mJp"></p>
+          <div class="mctl">
+            <button class="act primary" id="mPlay"><span class="pl">▶</span>聞く</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule" id="ruleList"></div>
+    </div>
+  </section>
+
+  <!-- ================= 4. ブレンド ================= -->
+  <section class="panel">
+    <div class="sec-head">
+      <h2>音をつないで読む</h2>
+      <p class="step">04 / BLENDING</p>
+    </div>
+    <p class="lead">フォニックスの仕上げは<b>ブレンド</b>（音つなぎ）です。1つずつの音を、切らずにつなげると単語になります。3つのドラムを回して、いろいろな組み合わせを読んでみましょう。</p>
+
+    <div class="blend" style="margin-top:16px">
+      <div class="drums">
+        <div class="drum">
+          <p>1st</p>
+          <div class="face" id="d0"></div>
+          <div class="nav"><button data-d="0" data-s="-1" aria-label="前へ">◀</button><button data-d="0" data-s="1" aria-label="次へ">▶</button></div>
+        </div>
+        <div class="drum">
+          <p>VOWEL</p>
+          <div class="face" id="d1"></div>
+          <div class="nav"><button data-d="1" data-s="-1" aria-label="前へ">◀</button><button data-d="1" data-s="1" aria-label="次へ">▶</button></div>
+        </div>
+        <div class="drum">
+          <p>LAST</p>
+          <div class="face" id="d2"></div>
+          <div class="nav"><button data-d="2" data-s="-1" aria-label="前へ">◀</button><button data-d="2" data-s="1" aria-label="次へ">▶</button></div>
+        </div>
+      </div>
+
+      <div class="out">
+        <p class="word" id="bWord"></p>
+        <p class="verdict" id="bVerdict">&nbsp;</p>
+        <div class="playrow">
+          <button class="act" id="bSlow"><span class="pl">▶</span>1音ずつ ゆっくり</button>
+          <button class="act primary" id="bFast"><span class="pl">▶</span>つなげて読む</button>
+        </div>
+        <button class="act dice" id="bRand">ランダムに回す</button>
+      </div>
+    </div>
+
+    <p class="foot-note" style="margin-top:16px">読み上げには、お使いの端末に入っている英語の音声を使っています。単語はほぼ正確に読まれますが、音を1つだけ取り出した「音を聞く」は近い音で代用しています。正確な音は、口の形の図と合わせて確かめてください。</p>
+  </section>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <nav class="footer-links">
+      <a href="index.html">ホーム</a>
+      <a href="index.html#materials">教材</a>
+    </nav>
+    <p class="credit">
+      <span>Produced by</span>
+      <a href="https://nasa.co.jp/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
+    </p>
+  </div>
+  <div class="footer-bottom">&copy; 2026 株式会社日本総合教育舎</div>
+</footer>
+
+<script>
+/* =========================================================
+   読み上げ（Web Speech API）
+   端末に入っている英語の音声を使う。音声ファイルは持たない。
+   ========================================================= */
+const SS = window.speechSynthesis;
+let voice = null;
+
+function pickVoice(){
+  if(!SS) return null;
+  const vs = SS.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
+  if(!vs.length) return null;
+  const pref = ['Google US English','Samantha','Microsoft Aria','Microsoft Jenny',
+                'Microsoft Zira','Alex','Google UK English Female'];
+  for(const p of pref){ const f = vs.find(v=>v.name.indexOf(p)>=0); if(f) return f; }
+  return vs.find(v=>/en[-_]US/i.test(v.lang)) || vs[0];
+}
+
+function refreshVoice(){
+  const bar = document.getElementById('audiobar');
+  const st  = document.getElementById('voiceState');
+  if(!SS){
+    bar.classList.add('bad');
+    st.textContent = 'このブラウザは読み上げに対応していません';
+    document.getElementById('voiceNote').textContent =
+      'Chrome / Edge / Safari でひらくと音が出ます。図とルールはそのまま使えます。';
+    return;
+  }
+  const list = SS.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
+  if(!list.length){ st.textContent = '英語の音声を探しています…'; return; }
+
+  if(!voice || list.indexOf(voice) < 0) voice = pickVoice();
+  bar.classList.add('ready'); bar.classList.remove('bad');
+  st.textContent = '英語の音声';
+
+  const wrap = document.getElementById('pickVoiceWrap');
+  const sel  = document.getElementById('voiceSel');
+  wrap.hidden = false;
+  const sig = list.map(v=>v.name).join('|');
+  if(sel.dataset.sig !== sig){
+    sel.dataset.sig = sig;
+    sel.innerHTML = list.map((v,i)=>
+      '<option value="' + i + '">' + v.name.replace(/^Microsoft /,'') + '</option>').join('');
+    sel.onchange = ()=>{ voice = list[+sel.value]; };
+  }
+  sel.value = String(Math.max(0, list.indexOf(voice)));
+}
+if(SS){
+  refreshVoice();
+  SS.onvoiceschanged = refreshVoice;
+  setTimeout(refreshVoice, 400);
+}
+
+let rate = 0.85;
+const rateEl = document.getElementById('rate');
+rateEl.addEventListener('input', ()=>{
+  rate = +rateEl.value;
+  document.getElementById('rateV').textContent = rate.toFixed(2);
+});
+
+/* text を読む。読み終わりで解決する Promise を返す */
+function say(text, mul){
+  return new Promise(res=>{
+    if(!SS || !text){ res(); return; }
+    SS.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = voice ? voice.lang : 'en-US';
+    u.rate = Math.max(0.1, rate * (mul || 1));
+    if(voice) u.voice = voice;
+    u.onend = res; u.onerror = res;
+    SS.speak(u);
+    setTimeout(res, 4000);            // 端末が onend を返さないときの保険
+  });
+}
+const wait = ms => new Promise(r=>setTimeout(r, ms));
+
+/* =========================================================
+   音のデータ
+   g:文字 kana:日本語での近い音 w:例の単語 j:意味 say:読み上げ用の文字列
+   v:のどがふるえる z:舌などを使う場所 m:口の形 tip:出し方
+   ========================================================= */
+const P = [
+ // --- くちびる ---
+ {g:'b', kana:'ブ',  w:'bat',  j:'コウモリ', say:'buh',  v:1, z:'lips', m:'closed',
+  tip:'くちびるを閉じて息をため、ぱっと開いて出す。のどがふるえる。'},
+ {g:'p', kana:'プ',  w:'pen',  j:'ペン',     say:'puh',  v:0, z:'lips', m:'closed',
+  tip:'口の形は b と同じ。のどはふるえず、息だけがぱっと出る。'},
+ {g:'m', kana:'ム',  w:'map',  j:'地図',     say:'mmm',  v:1, z:'lips', m:'closed',
+  tip:'くちびるを閉じたまま、音を鼻から出す。長くのばせる音。'},
+ {g:'w', kana:'ウ',  w:'win',  j:'勝つ',     say:'wuh',  v:1, z:'lips', m:'round',
+  tip:'くちびるを丸くとがらせてから、すべるように次の音へ動かす。'},
+ // --- 歯とくちびる ---
+ {g:'f', kana:'フ',  w:'fan',  j:'せんぷうき', say:'fff', v:0, z:'lipteeth', m:'bite',
+  tip:'上の歯を下くちびるに軽くあて、すきまから息をこすらせる。'},
+ {g:'v', kana:'ヴ',  w:'van',  j:'ワゴン車', say:'vvv',  v:1, z:'lipteeth', m:'bite',
+  tip:'f とまったく同じ形で、のどをふるわせる。日本語にはない音。'},
+ // --- 舌先と歯 ---
+ {g:'th', kana:'ス', w:'thin', j:'うすい',   say:'thhh', v:0, z:'teeth', m:'out',
+  tip:'舌先を上下の歯で軽くはさみ、すきまから息を出す。「ス」ではない。'},
+ {g:'th', kana:'ズ', w:'this', j:'これ',     say:'the',  v:1, z:'teeth', m:'out',
+  tip:'同じ形のまま、のどをふるわせる。the, this, that はこの音。'},
+ // --- 舌先と歯ぐき ---
+ {g:'t', kana:'トゥ', w:'top', j:'こま',     say:'tuh',  v:0, z:'ridge', m:'up',
+  tip:'舌先を上の歯ぐきにつけ、はじくようにはなす。息だけ。'},
+ {g:'d', kana:'ドゥ', w:'dog', j:'いぬ',     say:'duh',  v:1, z:'ridge', m:'up',
+  tip:'t と同じ形で、のどをふるわせる。'},
+ {g:'n', kana:'ヌ',  w:'net',  j:'あみ',     say:'nnn',  v:1, z:'ridge', m:'up',
+  tip:'舌先を歯ぐきにつけたまま、音を鼻から出す。'},
+ {g:'l', kana:'ル',  w:'leg',  j:'あし',     say:'lll',  v:1, z:'ridge', m:'up',
+  tip:'舌先を歯ぐきにしっかりつけ、声を舌の両わきから流す。'},
+ {g:'s', kana:'ス',  w:'sun',  j:'たいよう', say:'sss',  v:0, z:'ridge', m:'smile',
+  tip:'舌先を歯ぐきに近づけ、細いすきまから息を出す。'},
+ {g:'z', kana:'ズ',  w:'zip',  j:'ファスナー', say:'zzz', v:1, z:'ridge', m:'smile',
+  tip:'s と同じ形で、のどをふるわせる。'},
+ // --- 舌のまん中 ---
+ {g:'sh', kana:'シュ', w:'ship', j:'ふね',   say:'shhh', v:0, z:'mid', m:'round',
+  tip:'舌を少し後ろに引き、くちびるを前に出して息を出す。「静かに！」の音。'},
+ {g:'ch', kana:'チ', w:'chair', j:'いす',    say:'chuh', v:0, z:'mid', m:'round',
+  tip:'t の形から sh へ、ひと息で続けて出す。'},
+ {g:'j', kana:'ヂュ', w:'jam', j:'ジャム',   say:'juh',  v:1, z:'mid', m:'round',
+  tip:'ch と同じ形で、のどをふるわせる。'},
+ {g:'y', kana:'ユ',  w:'yes',  j:'はい',     say:'yuh',  v:1, z:'mid', m:'smile',
+  tip:'舌の前を上あごに近づけ、すぐに次の音へすべらせる。'},
+ {g:'r', kana:'ル',  w:'red',  j:'あかい',   say:'rrr',  v:1, z:'mid', m:'round',
+  tip:'舌先をどこにもつけず、口の中で丸める。くちびるも少しすぼめる。l との違いはここ。'},
+ // --- 舌のおく ---
+ {g:'k', kana:'ク',  w:'kite', j:'たこ',     say:'kuh',  v:0, z:'back', m:'open',
+  tip:'舌のおくを上あごのおくにつけ、ぱっとはなす。'},
+ {g:'g', kana:'グ',  w:'goat', j:'やぎ',     say:'guh',  v:1, z:'back', m:'open',
+  tip:'k と同じ形で、のどをふるわせる。'},
+ {g:'ng', kana:'ング', w:'king', j:'おうさま', say:'ng',  v:1, z:'back', m:'open',
+  tip:'舌のおくをつけたまま、音を鼻から出す。「ング」の「グ」は言わない。'},
+ // --- のど ---
+ {g:'h', kana:'ハ',  w:'hat',  j:'ぼうし',   say:'huh',  v:0, z:'throat', m:'open',
+  tip:'口はつぎの音の形にして、のどのおくから息だけを出す。'},
+ // --- 短い母音 ---
+ {g:'a', kana:'ア',  w:'cat',  j:'ねこ',     say:'at',   v:1, z:'vowel', m:'wide', vowel:1,
+  tip:'口を大きく横に開き、あごを下げる。日本語の「ア」より口が広い。'},
+ {g:'e', kana:'エ',  w:'bed',  j:'ベッド',   say:'ed',   v:1, z:'vowel', m:'mid', vowel:1,
+  tip:'口を軽く横に開く。日本語の「エ」に近い。'},
+ {g:'i', kana:'イ',  w:'pig',  j:'ぶた',     say:'it',   v:1, z:'vowel', m:'grin', vowel:1,
+  tip:'口を横に少しだけ開く。「イ」と「エ」の中間くらい。'},
+ {g:'o', kana:'オ',  w:'box',  j:'はこ',     say:'ox',   v:1, z:'vowel', m:'roundopen', vowel:1,
+  tip:'口を大きくたてに開く。のどのおくから出す「オ」。'},
+ {g:'u', kana:'ア',  w:'cup',  j:'コップ',   say:'up',   v:1, z:'vowel', m:'mid', vowel:1,
+  tip:'口の力をぬいて、みじかく「ア」。あいまいな音。'}
+];
+
+/* =========================================================
+   口の形（正面から見た図）のパラメータ
+   lr:くちびるの横はば lb:たての開き cr,cb:口の中の開き
+   ========================================================= */
+const MOUTH = {
+  closed:    {lr:70, lb:16, cr:0,  cb:0,  tongue:null, bite:0, out:0},
+  round:     {lr:44, lb:44, cr:27, cb:27, tongue:{cy:108, ry:18}, bite:0, out:0},
+  roundopen: {lr:56, lb:48, cr:39, cb:32, tongue:{cy:110, ry:20}, bite:0, out:0},
+  wide:      {lr:80, lb:52, cr:63, cb:38, tongue:{cy:114, ry:22}, bite:0, out:0},
+  open:      {lr:70, lb:44, cr:53, cb:30, tongue:{cy:110, ry:22}, bite:0, out:0},
+  mid:       {lr:74, lb:34, cr:56, cb:21, tongue:{cy:104, ry:20}, bite:0, out:0},
+  grin:      {lr:82, lb:26, cr:64, cb:13, tongue:{cy:100, ry:18}, bite:0, out:0},
+  smile:     {lr:86, lb:22, cr:68, cb:10, tongue:{cy:96,  ry:16}, bite:0, out:0},
+  up:        {lr:74, lb:38, cr:56, cb:24, tongue:{cy:99, ry:26, rx:30}, bite:0, out:0},
+  bite:      {lr:74, lb:26, cr:56, cb:13, tongue:null,            bite:1, out:0},
+  out:       {lr:76, lb:34, cr:58, cb:20, tongue:null,            bite:0, out:1}
+};
+
+const $ = id => document.getElementById(id);
+const setA = (el, o) => { for(const k in o) el.setAttribute(k, o[k]); };
+
+function drawMouth(shape){
+  const m = MOUTH[shape] || MOUTH.mid;
+  setA($('lipOut'),  {rx:m.lr, ry:m.lb});
+  setA($('lipRing'), {rx:m.lr, ry:m.lb});
+  setA($('lipIn'),   {rx:m.cr, ry:m.cb});
+  setA($('cavClip'), {rx:m.cr, ry:m.cb});
+  $('teethUp').setAttribute('opacity', m.cb > 6 ? 1 : 0);
+  const t = $('tongue');
+  if(m.tongue){
+    t.setAttribute('opacity', 1);
+    setA(t, {cy:m.tongue.cy, ry:m.tongue.ry, rx:m.tongue.rx || 46});
+  }
+  else t.setAttribute('opacity', 0);
+  $('lipBite').setAttribute('opacity', m.bite);
+  $('tongueOut').setAttribute('opacity', m.out);
+}
+
+/* ---------- いま選ばれている音を表示する ---------- */
+let cur = P[0];
+
+function show(s){
+  cur = s;
+  $('vG').textContent = s.g;
+  $('vKana').textContent = s.kana + ' の音';
+  $('vType').textContent = s.vowel ? '母音' : '子音';
+  $('vTip').textContent = s.tip;
+  $('vWordBtn').textContent = s.w;
+  drawMouth(s.m);
+
+  const bar = $('zonebar');
+  bar.classList.toggle('dim', !!s.vowel);
+  [...bar.children].forEach(el => el.classList.toggle('on', el.dataset.z === s.z));
+
+  const vb = $('vbadge');
+  vb.classList.toggle('voiced', !!s.v);
+  $('vVoice').innerHTML = s.v
+    ? 'のどが<b>ふるえる</b>（有声音）'
+    : 'のどはふるえない（息だけの無声音）';
+
+  document.querySelectorAll('#picker .chip').forEach(b=>{
+    b.classList.toggle('on', +b.dataset.i === P.indexOf(s));
+  });
+}
+
+/* ---------- 音を選ぶボタンをならべる ---------- */
+const ZONES = [
+  ['くちびるを使う',      ['lips']],
+  ['歯を使う',            ['lipteeth','teeth']],
+  ['舌先を歯ぐきにつける', ['ridge']],
+  ['舌のまん中・おく',     ['mid','back','throat']],
+  ['短い母音',            ['vowel']]
+];
+$('picker').innerHTML = ZONES.map(([name, zs]) => {
+  const items = P.map((s,i)=>[s,i]).filter(([s])=>zs.indexOf(s.z)>=0);
+  return '<div class="pgroup"><p>' + name + '</p><div class="chips">' +
+    items.map(([s,i]) =>
+      '<button class="chip" data-i="' + i + '"><b>' + s.g + '</b><small>' + s.kana + '</small></button>'
+    ).join('') + '</div></div>';
+}).join('');
+
+$('picker').addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  const s = P[+b.dataset.i];
+  show(s); say(s.say, 0.85);
+});
+$('playSound').addEventListener('click', ()=> say(cur.say, 0.8));
+$('playWord').addEventListener('click',  ()=> say(cur.w));
+show(P[0]);
+
+/* =========================================================
+   2. 音の一覧
+   ========================================================= */
+const CHART = [
+ {t:'1文字の子音', en:'SINGLE CONSONANTS', items:[
+   ['b','ブ','bat','コウモリ'],['c','ク','cup','コップ'],['d','ドゥ','dog','いぬ'],
+   ['f','フ','fan','せんぷうき'],['g','グ','goat','やぎ'],['h','ハ','hat','ぼうし'],
+   ['j','ヂュ','jam','ジャム'],['k','ク','kite','たこ'],['l','ル','leg','あし'],
+   ['m','ム','map','地図'],['n','ヌ','net','あみ'],['p','プ','pen','ペン'],
+   ['qu','クウ','queen','じょおう'],['r','ル','red','あかい'],['s','ス','sun','たいよう'],
+   ['t','トゥ','top','こま'],['v','ヴ','van','ワゴン車'],['w','ウ','win','勝つ'],
+   ['x','クス','box','はこ'],['y','ユ','yes','はい'],['z','ズ','zip','ファスナー']
+ ]},
+ {t:'2文字で1つの音', en:'DIGRAPHS', items:[
+   ['sh','シュ','ship','ふね'],['ch','チ','chair','いす'],['th','ス（息）','thin','うすい'],
+   ['th','ズ（声）','this','これ'],['wh','ホワ','whale','くじら'],['ph','フ','phone','電話'],
+   ['ck','ク','duck','あひる'],['ng','ング','king','おうさま']
+ ]},
+ {t:'短い母音', en:'SHORT VOWELS', items:[
+   ['a','ア','cat','ねこ'],['e','エ','bed','ベッド'],['i','イ','pig','ぶた'],
+   ['o','オ','box','はこ'],['u','ア','cup','コップ']
+ ]},
+ {t:'長い母音（名前の音）', en:'LONG VOWELS', items:[
+   ['a_e','エイ','cake','ケーキ'],['e_e','イー','these','これら'],['i_e','アイ','bike','自転車'],
+   ['o_e','オウ','home','家'],['u_e','ユー','cute','かわいい']
+ ]},
+ {t:'母音のチーム', en:'VOWEL TEAMS', items:[
+   ['ai / ay','エイ','rain','雨'],['ee / ea','イー','tree','木'],['oa / ow','オウ','boat','ボート'],
+   ['ie / igh','アイ','night','夜'],['oo','ウー','moon','月'],['oo','ウ','book','本'],
+   ['ou / ow','アウ','cow','うし'],['oi / oy','オイ','coin','コイン'],['au / aw','オー','saw','のこぎり']
+ ]},
+ {t:'r のついた母音', en:'R-CONTROLLED', items:[
+   ['ar','アー','car','くるま'],['or','オー','corn','とうもろこし'],['er','アー','her','彼女の'],
+   ['ir','アー','bird','とり'],['ur','アー','turn','まわる']
+ ]}
+];
+
+$('chart').innerHTML = CHART.map(g =>
+  '<div class="tablegroup"><h3>' + g.t + ' <em>' + g.en + '</em></h3><div class="grid">' +
+  g.items.map(([gr,ka,w,j]) =>
+    '<button class="sc" data-w="' + w + '"><span class="g">' + gr + ' <s>' + ka + '</s></span>' +
+    '<span class="w"><b>' + w + '</b></span><span class="j">' + j + '</span></button>'
+  ).join('') + '</div></div>'
+).join('');
+
+$('chart').addEventListener('click', e=>{
+  const b = e.target.closest('.sc'); if(!b) return;
+  say(b.dataset.w);
+});
+
+/* =========================================================
+   3. ルール
+   ========================================================= */
+const MAGIC = [
+  ['cap','ぼうし','キャップ', 'cape','マント','ケイプ', 1],
+  ['kit','道具セット','キット','kite','たこ','カイト', 1],
+  ['hop','ぴょんと跳ぶ','ホップ','hope','のぞみ','ホウプ', 1],
+  ['tub','おけ','タブ','tube','くだ','テューブ', 1],
+  ['can','かん','キャン','cane','つえ','ケイン', 1]
+];
+let mi = 0, mOn = false;
+
+function magicDraw(){
+  const [a, aj, ak, b, bj, bk] = MAGIC[mi];
+  const w = mOn ? b : a, kana = mOn ? bk : ak, jp = mOn ? bj : aj;
+  const vpos = 1;                                   // 3文字語の2文字目が母音
+  $('mWord').innerHTML = w.split('').map((c,i)=>{
+    if(mOn && i === w.length-1) return '<i class="e">' + c + '</i>';
+    return '<i class="' + (i === vpos ? 'v' : '') + '">' + c + '</i>';
+  }).join('');
+  $('mWord').classList.toggle('on', mOn);
+  $('mKana').textContent = kana;
+  $('mJp').textContent = jp;
+  $('magicSw').classList.toggle('on', mOn);
+  $('magicSw').setAttribute('aria-pressed', mOn ? 'true' : 'false');
+}
+$('magicSw').addEventListener('click', ()=>{
+  mOn = !mOn; magicDraw(); say(mOn ? MAGIC[mi][3] : MAGIC[mi][0]);
+});
+$('magicNext').addEventListener('click', ()=>{
+  mi = (mi + 1) % MAGIC.length; magicDraw();
+});
+$('mPlay').addEventListener('click', ()=> say(mOn ? MAGIC[mi][3] : MAGIC[mi][0]));
+magicDraw();
+
+const RULES = [
+ {h:'ルール2　母音は2つの顔を持つ',
+  p:'a・e・i・o・u には「みじかい音」と「アルファベットの名前どおりの音」の2つがあります。子音にはさまれた母音は、たいてい<b>みじかい音</b>です。',
+  w:['cat','cake','pig','bike','hop','home']},
+ {h:'ルール3　2文字でも音は1つ',
+  p:'sh・ch・th・wh・ph・ck・ng は、2文字でひとかたまり。<b>間で切らずに1つの音</b>として読みます。これを知らないと、shop を「エス・ホップ」と読んでしまいます。',
+  w:['shop','chin','that','when','graph','duck','ring']},
+ {h:'ルール4　母音が2つならぶと、前が名前を言う',
+  p:'母音が2つならんだときは、<b>前の文字がアルファベットの名前</b>を言い、後ろは読まれないことが多いです。「2人で歩くと、前の子がしゃべる」と覚えます。ただし例外もあります。',
+  w:['rain','boat','see','pie','team']},
+ {h:'ルール5　c と g はやわらかくなる',
+  p:'c と g のうしろに <b>e・i・y</b> が来ると、c は「ス」、g は「ヂ」の音に変わります。それ以外では「ク」「グ」です。',
+  w:['cat','city','cent','go','giant','gym']},
+ {h:'ルール6　r は前の母音を変える',
+  p:'母音のうしろに r が来ると、母音は元の音でなくなり、<b>r にひっぱられた音</b>になります。er・ir・ur は3つとも同じ音です。',
+  w:['car','corn','her','bird','turn']},
+ {h:'ルール7　読まない文字がある',
+  p:'kn・wr・mb・gh などは、片方の文字を<b>読みません</b>。昔は読んでいた名残です。形で覚えてしまうのが早道です。',
+  w:['knee','know','write','lamb','night']},
+ {h:'ルール8　y は3つの音を持つ',
+  p:'語のはじめの y は「ユ」。みじかい語のおわりでは「アイ」。長い語のおわりでは「イー」になります。',
+  w:['yes','my','sky','happy','baby']},
+ {h:'ルール9　語のおわりの -le',
+  p:'-le で終わる語は「ウル」とみじかく読みます。その前の子音とセットで、ぽんと落とすように読むのがコツです。',
+  w:['table','apple','little','purple']}
+];
+
+document.getElementById('ruleList').outerHTML = RULES.map(r =>
+  '<div class="rule"><h3>' + r.h + '</h3><p>' + r.p + '</p><div class="words">' +
+  r.w.map(w => '<button class="wbtn" data-w="' + w + '">' + w + '</button>').join('') +
+  '</div></div>'
+).join('');
+
+document.querySelector('.rules').addEventListener('click', e=>{
+  const b = e.target.closest('.wbtn'); if(!b) return;
+  say(b.dataset.w);
+});
+
+/* =========================================================
+   4. ブレンド（音つなぎ）
+   ========================================================= */
+const ON  = ['b','c','d','f','g','h','j','l','m','n','p','r','s','t','w','sh','ch','st','tr'];
+const VO  = ['a','e','i','o','u'];
+const CO  = ['t','d','g','n','p','m','b','x','ck','ll','sh','ng','ss'];
+
+const SAY = {b:'buh',c:'kuh',d:'duh',f:'fff',g:'guh',h:'huh',j:'juh',l:'lll',m:'mmm',
+             n:'nnn',p:'puh',r:'rrr',s:'sss',t:'tuh',w:'wuh',sh:'shhh',ch:'chuh',
+             st:'sst',tr:'truh',x:'ks',ck:'kuh',ll:'lll',ng:'ng',ss:'sss',
+             a:'ah',e:'eh',i:'ih',o:'oh',u:'uh'};
+
+const REAL = ('bat bad bag ban cat cap can cab dad fan fat gap ham hat had hop hot jam ' +
+  'lap mad man map mat nap pan pat pad rat ram ran sad sat sap tan tap tag wag ' +
+  'bed beg bet den fed get hen jet led leg let men met net peg pen pet red set ten wet ' +
+  'big bid bin bit dig dim dip fig fin fit hid hip hit jig lid lip lit nip pig pin pit ' +
+  'rib rid rig rim rip sit sip six tin tip win wig zip mix fix ' +
+  'cob cod cop cot dog dot fog fox got hog hot job jog log lot mob mom mop nod not pod ' +
+  'pop pot rob rod rot sob top box ' +
+  'bug bun bus but cub cup cut dug fun gum gun hug hum hut jug mud mug nut pup rub rug ' +
+  'run sun sum tub tug ' +
+  'shop ship shot shut chin chat chip chop stop step stem stop trip trap ' +
+  'ball bell doll fell tall well hill sell tell mess miss kiss less boss ' +
+  'king ring sing song long bang ' +
+  'cash dish fish wish rush dash wash math bath').split(/\s+/);
+const REALSET = new Set(REAL);
+
+let di = [0, 0, 15 % CO.length];
+const drumList = [ON, VO, CO];
+
+function word(){ return ON[di[0]] + VO[di[1]] + CO[di[2]]; }
+
+function blendDraw(){
+  for(let k=0;k<3;k++) $('d'+k).textContent = drumList[k][di[k]];
+  const w = word();
+  $('bWord').innerHTML =
+    '<span data-k="0">' + ON[di[0]] + '</span>' +
+    '<span data-k="1">' + VO[di[1]] + '</span>' +
+    '<span data-k="2">' + CO[di[2]] + '</span>';
+  const v = $('bVerdict');
+  if(REALSET.has(w)){ v.textContent = '本当にある単語です'; v.classList.add('real'); }
+  else{ v.textContent = '（これは英語にはない ならび）'; v.classList.remove('real'); }
+}
+
+document.querySelector('.drums').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const d = +b.dataset.d, s = +b.dataset.s, L = drumList[d].length;
+  di[d] = (di[d] + s + L) % L;
+  blendDraw();
+});
+
+function hi(k){
+  document.querySelectorAll('#bWord span').forEach(s=>{
+    s.classList.toggle('hi', +s.dataset.k === k);
+  });
+}
+
+let busy = false;
+async function playSlow(){
+  if(busy) return; busy = true;
+  const parts = [ON[di[0]], VO[di[1]], CO[di[2]]];
+  for(let k=0;k<3;k++){
+    hi(k);
+    await say(SAY[parts[k]] || parts[k], 0.75);
+    await wait(180);
+  }
+  hi(-1);
+  await wait(200);
+  await say(word(), 0.85);
+  busy = false;
+}
+$('bSlow').addEventListener('click', playSlow);
+$('bFast').addEventListener('click', ()=> say(word()));
+$('bRand').addEventListener('click', ()=>{
+  // 半分くらいは本物の単語が出るようにする
+  if(Math.random() < 0.6){
+    const cands = REAL.filter(w=>{
+      for(let a=0;a<ON.length;a++) for(let b=0;b<VO.length;b++) for(let c=0;c<CO.length;c++)
+        if(ON[a]+VO[b]+CO[c] === w) return true;
+      return false;
+    });
+    if(cands.length){
+      const w = cands[Math.floor(Math.random()*cands.length)];
+      for(let a=0;a<ON.length;a++) for(let b=0;b<VO.length;b++) for(let c=0;c<CO.length;c++)
+        if(ON[a]+VO[b]+CO[c] === w){ di = [a,b,c]; }
+      blendDraw(); say(w); return;
+    }
+  }
+  di = di.map((_,k)=> Math.floor(Math.random()*drumList[k].length));
+  blendDraw();
+});
+blendDraw();
+</script>
+
+</body>
+</html>

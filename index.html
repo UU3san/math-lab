@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>数学ラボ</title>
-<meta name="description" content="さわって、動かして、数学がわかる。株式会社日本総合教育舎がつくる、ブラウザだけで使える算数・数学の学習アプリを集めたサイトです。">
+<title>学びラボ</title>
+<meta name="description" content="さわって、動かして、わかる。株式会社日本総合教育舎がつくる、ブラウザだけで使える算数・数学と英語の学習アプリを集めたサイトです。">
 <meta name="author" content="株式会社日本総合教育舎">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
@@ -35,7 +35,8 @@
 
   /* ---------- 教材カード ---------- */
   .cards{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:18px;
+    /* 1行に2枚。教材が増えたら minmax を小さくして3枚並べてもよい */
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px;
   }
   .card{
     display:flex;flex-direction:column;gap:12px;
@@ -58,11 +59,18 @@
     font-size:.68rem;letter-spacing:.04em;color:var(--accent-dark);
     background:var(--accent-soft);border-radius:999px;padding:3px 10px;
   }
-  /* 最初の1つは大きく見せる（教材が増えたら feature を外す） */
-  .card.feature{grid-column:span 2;flex-direction:row;align-items:flex-start;gap:20px}
-  .card.feature .mark{width:84px;height:84px;flex:0 0 84px;padding:12px}
-  .card.feature .body{display:flex;flex-direction:column;gap:10px;min-width:0}
-  .card.feature h3{font-size:1.18rem}
+  /* 教科ごとの色分け（英語） */
+  .card.en:hover{
+    border-color:var(--accent-en);
+    box-shadow:0 2px 4px rgba(30,42,38,.06), 0 14px 32px rgba(61,79,165,.16);
+  }
+  .card.en .mark{color:var(--accent-en);background:var(--accent-en-soft)}
+  .card.en .tags span{color:var(--accent-en-dark);background:var(--accent-en-soft)}
+  .subject{
+    font-family:'IBM Plex Mono',monospace;font-size:.63rem;letter-spacing:.18em;
+    color:var(--accent);font-weight:500;
+  }
+  .card.en .subject{color:var(--accent-en)}
 
 
   @media(max-width:760px){
@@ -83,7 +91,7 @@
         <circle cx="16" cy="16" r="13"/>
         <polygon points="16,4 27,12 23,25 9,25 5,12"/>
       </svg>
-      <b>数学ラボ<span>MATH LAB</span></b>
+      <b>学びラボ<span>LEARNING LAB</span></b>
     </a>
     <nav class="header-nav">
       <a href="index.html" class="active">ホーム</a>
@@ -95,9 +103,9 @@
 <section class="hero">
   <div class="hero-inner">
     <div>
-      <p class="eyebrow">Math Lab</p>
-      <h1>さわって、動かして、<br><em>数学がわかる。</em></h1>
-      <p>教科書の図は動きません。ここに置いてあるのは、自分の手で回したり、ひらいたり、かぞえたりできる教材です。インストールは不要で、パソコンでもスマホでもそのまま使えます。</p>
+      <p class="eyebrow">Learning Lab</p>
+      <h1>さわって、動かして、<br><em>わかる。</em></h1>
+      <p>教科書の図は動きませんし、紙の文字は音を出しません。ここに置いてあるのは、自分の手で回したり、ひらいたり、音を鳴らしたりできる教材です。インストールは不要で、パソコンでもスマホでもそのまま使えます。</p>
       <p class="by">
         <span class="eyebrow">Produced by</span>
         <a href="https://nasa.co.jp/" target="_blank" rel="noopener">株式会社日本総合教育舎</a>
@@ -120,24 +128,38 @@
   <section class="section" id="materials">
     <div class="section-head">
       <h2>教材</h2>
-      <p class="count">01</p>
+      <p class="count">02</p>
     </div>
 
     <div class="cards">
-      <a class="card feature" href="polyhedron.html">
+      <a class="card" href="polyhedron.html">
         <svg class="mark" viewBox="0 0 26 26" fill="currentColor" stroke="rgba(0,0,0,.35)" stroke-width="1.1" aria-hidden="true">
           <circle cx="13" cy="13" r="11"/>
           <path d="M13 2 L4 8 L4 18 L13 24 L22 18 L22 8 Z M13 2 L13 8 M4 8 L13 8 M22 8 L13 8 M13 8 L8 16 M13 8 L18 16 M4 18 L8 16 M22 18 L18 16 M13 24 L8 16 M13 24 L18 16" fill="none"/>
         </svg>
         <div class="body">
+        <p class="subject">算数・数学</p>
         <h3>正多面体ラボ</h3>
         <p>正四面体から正二十面体まで5種類。面・辺・頂点を1つずつ光らせてかぞえ、展開図がたたまれて立体になる様子を見て、指で回していろいろな角度から観察できます。</p>
         <div class="tags"><span>立体図形</span><span>展開図</span><span>小5〜中1</span></div>
         </div>
       </a>
+
+      <a class="card en" href="phonics.html">
+        <svg class="mark" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 13c0-4 4.5-7 10-7s10 3 10 7-4.5 7-10 7c-1.4 0-2.7-.2-3.9-.5L5 21l1.1-3.3C4.2 16.5 3 14.9 3 13Z"/>
+          <path d="M9.5 15.5 12.6 8l3.1 7.5M10.6 13.3h4"/>
+        </svg>
+        <div class="body">
+        <p class="subject">英語</p>
+        <h3>フォニックスラボ</h3>
+        <p>アルファベットが出す「音」を、口の形の図と読み上げ音声で確かめられます。マジックEなどのルールを動かして試し、3つの音をつないで単語を作る練習までできます。</p>
+        <div class="tags"><span>フォニックス</span><span>発音</span><span>小1〜中1</span></div>
+        </div>
+      </a>
     </div>
 
-    <p class="note">教材はこれから少しずつ増やしていきます。</p>
+    <p class="note">音の出る教材は、はじめに1回どこかをタップしてから再生してください（スマホは音が鳴らないことがあります）。教材はこれから少しずつ増やしていきます。</p>
   </section>
 </main>
 

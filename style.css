@@ -131,11 +131,7 @@ a{color:var(--accent-dark)}
   font-family:'IBM Plex Mono',monospace;font-size:.64rem;letter-spacing:.18em;
   text-transform:uppercase;color:var(--muted);
 }
-.credit a{
-  font-size:.88rem;font-weight:700;color:var(--ink);
-  border-bottom:1px solid var(--line);padding-bottom:1px;
-}
-.credit a:hover{color:var(--accent-dark);border-color:var(--accent)}
+.credit b{font-size:.88rem;font-weight:700;color:var(--ink)}
 .footer-bottom{
   max-width:var(--wrap);margin:0 auto;padding:0 20px 22px;
   font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--muted);
